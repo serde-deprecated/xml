@@ -1,6 +1,6 @@
 # serde-xml
 
-current state:
+## current state
 - [x] xml to struct deserialization
 - [x] deserialize bool, int, string from `<anytagname>value</anythingelse>`
 - [x] deserialize sequences (tuple, array, vector) as struct member
@@ -14,13 +14,15 @@ current state:
 - [ ] remove debug print! messages
 - [ ] struct to xml serialization
 
-anti-features (just ignoring stuff I don't like):
+## anti-features
+I'm currently ignoring quite some stuff that I don't know how to handle in another way
+
 - [x] ignore namespaces
 - [x] skip xml comments
 - [x] skip xml version tag
 - [x] ignoring xml-attributes
 
-things that would be nice to have but might not be possible
+## nice to have
 - [ ] xsd verification
 - [ ] sequences of sequences (how would these even look like in xml?)
 - [ ] attributes to collapse xml elements that only contain a single type of element.
