@@ -3,6 +3,8 @@ use error::*;
 use serde::iter;
 use self::LexerError::*;
 
+use DEBUG;
+
 use std::{str, char};
 use std::{io, convert};
 
@@ -481,13 +483,13 @@ impl<Iter> XmlIterator<Iter>
     }
 
     pub fn bump(&mut self) -> Result<Lexical, Error> {
-        print!("bump");
+        if DEBUG { print!("bump"); }
         assert!(self.ch != InternalLexical::EndOfFile);
         self.ch = match self.decode() {
             Ok(ch) => ch,
             Err(e) => return Err(self.lexer_error(e)),
         };
-        println!(" -> {:?}", self.ch());
+        if DEBUG { println!(" -> {:?}", self.ch()); }
         self.ch()
     }
 }
