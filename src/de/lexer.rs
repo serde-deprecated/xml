@@ -4,6 +4,8 @@ use serde::iter;
 use self::LexerError::*;
 
 use DEBUG;
+use IsWhitespace;
+use std::ops::Deref;
 
 use std::{str, char};
 use std::{io, convert};
@@ -184,7 +186,7 @@ impl<Iter> XmlIterator<Iter>
                     self.state = LexerState::Start;
                     Ok(StartTagClose)
                 },
-                b'\n' | b'\r' | b'\t' | b' ' => continue,
+                c if c.is_ws() => continue,
                 c => {
                     self.buf.push(c);
                     break;
@@ -212,7 +214,7 @@ impl<Iter> XmlIterator<Iter>
                 b'=' => return done(self),
 
                 // whitespace -> search for `=`
-                b'\n' | b'\r' | b'\t' | b' ' => break,
+                c if c.is_ws() => break,
 
                 // other namespaces are forwarded
                 b':' if self.buf == b"xmlns" => {
@@ -228,7 +230,7 @@ impl<Iter> XmlIterator<Iter>
                 b'=' => return done(self),
 
                 // whitespace -> search for `=`
-                b'\n' | b'\r' | b'\t' | b' ' => continue,
+                c if c.is_ws() => continue,
 
                 // this is not the character you are looking for
                 _ => return Err(ExpectedEq),
@@ -256,7 +258,7 @@ impl<Iter> XmlIterator<Iter>
         use self::InternalLexical::*;
         loop {
             match try!(self.peek_char()) {
-                b'\n' | b'\r' | b'\t' | b' ' | b'/' | b'>' => {
+                c if c.is_ws_or(b"/>") => {
                     debug_assert!(!self.buf.is_empty());
                     self.state = LexerState::FirstAttribute;
                     return Ok(StartTagName);
@@ -437,7 +439,7 @@ impl<Iter> XmlIterator<Iter>
                     self.decode_normal()
                 },
                 c => {
-                    if self.buf.iter().all(|&c| b" \t\n\r".contains(&c)) {
+                    if self.buf.deref().is_ws() {
                         self.buf.clear();
                         self.buf.push(c);
                         self.decode_tag_name()

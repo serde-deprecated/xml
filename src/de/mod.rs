@@ -4,6 +4,7 @@ use error::ErrorCode::*;
 use serde::de;
 
 use DEBUG;
+use IsWhitespace;
 
 use std::io;
 mod lexer;
@@ -449,11 +450,10 @@ impl<'a, Iter> de::MapVisitor for ContentVisitor<'a, Iter>
             (&Inner, Text(_)) => 1,
             (&Inner, _) => 4,
             (&Value, EndTagName(_)) => return Ok(None),
-            (&Value, Text(txt)) if (|| txt.iter().all(|&c| b" \t\n\r".contains(&c)))() => 3,
+            (&Value, Text(txt)) if txt.is_ws() => 3,
             (&Value, Text(_)) => return Ok(Some(try!(KeyDeserializer::value_map()))),
             (&Element, EmptyElementEnd(_)) => 2,
-            // need closure to work around https://github.com/rust-lang/rfcs/issues/1006
-            (&Element, Text(txt)) if (|| txt.iter().all(|&c| b" \t\n\r".contains(&c)))() => 5,
+            (&Element, Text(txt)) if txt.is_ws() => 5,
             (&Element, EndTagName(_)) => return Ok(None),
             _ => unimplemented!()
         } {
@@ -596,7 +596,7 @@ impl<'a, Iter> de::SeqVisitor for SeqVisitor<'a, Iter>
         match match try!(self.de.ch()) {
             StartTagName(n) if n == self.de.stash_view() => 0,
             StartTagName(_) => 1,
-            Text(txt) if (|| txt.iter().all(|&c| b" \t\n\r".contains(&c)))() => 2,
+            Text(txt) if txt.is_ws() => 2,
             _ => unimplemented!()
         } {
             0 => { try!(self.de.bump()); },
