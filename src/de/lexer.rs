@@ -110,6 +110,21 @@ impl<Iter> XmlIterator<Iter>
         Ok(try!(try!(self.rdr.next().ok_or(LexerError::EOF))))
     }
 
+    fn expect_char(&mut self, ch: u8, err: LexerError) -> Result<(), LexerError> {
+        if try!(self.next_char()) == ch {
+            Ok(())
+        } else {
+            Err(err)
+        }
+    }
+
+    fn expect_bytes(&mut self, s: &[u8], err: LexerError) -> Result<(), LexerError> {
+        for &c in s {
+            try!(self.expect_char(c, err));
+        }
+        Ok(())
+    }
+
     fn find(&mut self, chars: &[u8]) -> Result<u8, LexerError> {
         for c in self.rdr.by_ref() {
             let c = try!(c);
@@ -266,24 +281,7 @@ impl<Iter> XmlIterator<Iter>
     }
 
     fn decode_cdata(&mut self) -> Result<(), LexerError> {
-        if try!(self.next_char()) != b'C' {
-            return Err(BadCDATA);
-        }
-        if try!(self.next_char()) != b'D' {
-            return Err(BadCDATA);
-        }
-        if try!(self.next_char()) != b'A' {
-            return Err(BadCDATA);
-        }
-        if try!(self.next_char()) != b'T' {
-            return Err(BadCDATA);
-        }
-        if try!(self.next_char()) != b'A' {
-            return Err(BadCDATA);
-        }
-        if try!(self.next_char()) != b'[' {
-            return Err(BadCDATA);
-        }
+        try!(self.expect_bytes(b"CDATA[", BadCDATA));
         loop {
             loop {
                 match try!(self.next_char()) {
@@ -314,9 +312,7 @@ impl<Iter> XmlIterator<Iter>
 
     fn decode_comment(&mut self) -> Result<(), LexerError> {
         use self::LexerError::*;
-        if try!(self.next_char()) != b'-' {
-            return Err(BadComment);
-        }
+        try!(self.expect_char(b'-', BadComment));
         loop {
             while try!(self.next_char()) != b'-' {}
             if try!(self.next_char()) != b'-' {
@@ -331,15 +327,7 @@ impl<Iter> XmlIterator<Iter>
 
     fn decode_declaration(&mut self) -> Result<(), LexerError> {
         use self::LexerError::*;
-        if try!(self.next_char()) != b'x' {
-            return Err(BadDeclaration);
-        }
-        if try!(self.next_char()) != b'm' {
-            return Err(BadDeclaration);
-        }
-        if try!(self.next_char()) != b'l' {
-            return Err(BadDeclaration);
-        }
+        try!(self.expect_bytes(b"xml", BadDeclaration));
         loop {
             while try!(self.next_char()) != b'?' {}
             if try!(self.next_char()) != b'>' {
@@ -350,11 +338,7 @@ impl<Iter> XmlIterator<Iter>
     }
 
     fn decode_rest(&mut self, rest: &[u8], good: u8) -> Result<(), LexerError> {
-        for &c in rest {
-            if try!(self.next_char()) != c {
-                return Err(BadEscapeSequence);
-            }
-        }
+        try!(self.expect_bytes(rest, BadEscapeSequence));
         self.buf.push(good);
         Ok(())
     }
@@ -431,11 +415,7 @@ impl<Iter> XmlIterator<Iter>
             b'q' => try!(self.decode_rest(b"uot", b'"')),
             _ => return Err(BadEscapeSequence),
         }
-        if try!(self.next_char()) == b';' {
-            Ok(())
-        } else {
-            Err(BadEscapeSequence)
-        }
+        self.expect_char(b';', BadEscapeSequence)
     }
 
     fn decode_normal(&mut self) -> Result<InternalLexical, LexerError> {
