@@ -9,6 +9,7 @@ use std::ops::Deref;
 
 use std::{str, char};
 use std::{io, convert};
+use std::iter::Peekable;
 
 #[derive(Debug, Copy, PartialEq, Clone)]
 pub enum Lexical<'a> {
@@ -55,7 +56,7 @@ enum LexerState {
 }
 
 pub struct XmlIterator<Iter: Iterator<Item=io::Result<u8>>> {
-    rdr: iter::LineColIterator<Iter>,
+    rdr: iter::LineColIterator<Peekable<Iter>>,
     buf: Vec<u8>,
     stash: Vec<u8>,
     state: LexerState,
@@ -86,7 +87,7 @@ impl<Iter> XmlIterator<Iter>
     #[inline]
     pub fn new(rdr: Iter) -> XmlIterator<Iter> {
         XmlIterator {
-            rdr: iter::LineColIterator::new(rdr),
+            rdr: iter::LineColIterator::new(rdr.peekable()),
             buf: Vec::with_capacity(128),
             stash: Vec::new(),
             state: LexerState::Start,
