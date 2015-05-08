@@ -7,7 +7,8 @@ description = "xml support for rust-serde"
 repository = "https://github.com/oli-obk/serde-xml"
 
 [dependencies.serde]
-path = "D:\\rust-serde\\"
+git = "github.com:oli-obk/rust-serde.git"
+branch = "xml_requirements"
 
 [dev-dependencies]
 serde_macros = "*"
