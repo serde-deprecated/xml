@@ -6,9 +6,8 @@ license = "MIT non-military non-spy"
 description = "xml support for rust-serde"
 repository = "https://github.com/oli-obk/serde-xml"
 
-[dependencies.serde]
-git = "https://github.com/oli-obk/serde-xml.git"
-branch = "xml_requirements"
+[dependencies]
+serde = "*"
 
 [dev-dependencies]
 serde_macros = "*"
