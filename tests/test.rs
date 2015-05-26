@@ -457,7 +457,7 @@ fn test_hugo_duncan() {
 fn test_parse_xml_value() {
     #[derive(Eq, Debug, PartialEq, Deserialize, Serialize)]
     struct Test {
-        #[serde(rename_deserialize="$value")]
+        #[serde(rename="$value")]
         myval: String,
     }
     test_parse_ok(&[
@@ -524,7 +524,7 @@ fn test_parse_attributes() {
     #[derive(PartialEq, Debug, Serialize, Deserialize)]
     struct A {
         a1: String,
-        #[serde(rename_deserialize="$value")]
+        #[serde(rename="$value")]
         a2: i32,
     }
 
