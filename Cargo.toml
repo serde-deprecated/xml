@@ -4,10 +4,11 @@ version = "0.0.1"
 authors = ["Oliver Schneider <serde-xml98198@oli-obk.de>"]
 license = "MIT non-military non-spy"
 description = "xml support for rust-serde"
-repository = "https://github.com/oli-obk/serde-xml"
+repository = "https://github.com/serde-rs/xml"
 
 [dependencies]
 serde = "*"
+log = "*"
 
 [dev-dependencies]
 serde_macros = "*"
