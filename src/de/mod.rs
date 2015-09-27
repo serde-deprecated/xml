@@ -337,6 +337,20 @@ impl<'a, Iter: 'a> de::VariantVisitor for VariantVisitor<'a, Iter>
         try!(self.0.bump());
         visitor.visit_map(ContentVisitor::new_attr(&mut self.0))
     }
+
+    /// `visit_newtype` is called when deseriailizing a variant with a single value.
+    fn visit_newtype<D>(&mut self) -> Result<D, Self::Error>
+        where D: de::Deserialize
+    {
+        expect!(self.0, StartTagClose, "start tag close");
+        let ret = {
+            let v = expect_val!(self.0, Text, "content");
+            let v = try!(self.0.from_utf8(v));
+            KeyDeserializer::visit(v)
+        };
+        expect!(self.0, EndTagName(_), "end tag name");
+        ret
+    }
 }
 
 struct UnitDeserializer;

@@ -92,6 +92,7 @@ impl From<io::Error> for Error {
 
 impl de::Error for Error {
     fn syntax(msg: &str) -> Error {
+        debug!("Syntax error: {}", msg);
         Error::SyntaxError(SerdeExpectedSomeValue(msg.to_string()), 0, 0)
     }
 
