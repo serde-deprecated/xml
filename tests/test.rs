@@ -2,6 +2,9 @@
 #![feature(custom_attribute)]
 #![plugin(serde_macros)]
 
+#[macro_use]
+extern crate log;
+
 extern crate test;
 extern crate serde;
 extern crate serde_xml;
@@ -18,6 +21,7 @@ use serde::ser;
 enum Animal {
     Dog,
     Frog(String),
+    Ant(Simple),
     Cat { age: usize, name: String },
 }
 
@@ -112,13 +116,44 @@ fn test_parse_string() {
     ]);
 }
 
+fn init_logger() {
+    use log::{LogRecord, LogLevel, LogMetadata};
+
+    struct SimpleLogger;
+
+    impl log::Log for SimpleLogger {
+        fn enabled(&self, metadata: &LogMetadata) -> bool {
+            metadata.level() <= LogLevel::Debug
+        }
+
+        fn log(&self, record: &LogRecord) {
+            if self.enabled(record.metadata()) {
+                println!("{} - {}", record.level(), record.args());
+            }
+        }
+    }
+    if !log_enabled!(log::LogLevel::Debug) {
+        log::set_logger(|max_log_level| {
+            max_log_level.set(log::LogLevelFilter::Debug);
+            Box::new(SimpleLogger)
+        }).unwrap();
+    }
+}
+
 #[test]
 fn test_parse_enum() {
     use self::Animal::*;
 
+    init_logger();
+
     test_parse_ok(&[
         ("<Animal xsi:type=\"Dog\"/>", Dog),
         ("<Animal xsi:type=\"Frog\">Quak</Animal>", Frog("Quak".to_string())),
+        ("<Animal xsi:type=\"Ant\"><a/><c>bla</c><b>15</b></Animal>", Ant(Simple{
+            a: (),
+            b: 15,
+            c: "bla".to_string(),
+        })),
         (
             "<Animal xsi:type=\"Cat\"><age>42</age><name>Shere Khan</name></Animal>",
             Cat {
