@@ -343,13 +343,30 @@ impl<'a, Iter: 'a> de::VariantVisitor for VariantVisitor<'a, Iter>
         where D: de::Deserialize
     {
         expect!(self.0, StartTagClose, "start tag close");
-        let ret = {
-            let v = expect_val!(self.0, Text, "content");
-            let v = try!(self.0.from_utf8(v));
-            try!(KeyDeserializer::visit(v))
-        };
-        expect!(self.0, EndTagName(_), "end tag name");
-        Ok(ret)
+        struct Dummy<'a, Iter: Iterator<Item=io::Result<u8>> + 'a>(&'a mut lexer::XmlIterator<Iter>);
+
+        impl<'a, Iter: Iterator<Item=io::Result<u8>> + 'a> de::Deserializer for Dummy<'a, Iter> {
+            type Error = Error;
+
+            fn visit<V>(&mut self, _visitor: V) -> Result<V::Value, Error>
+                where V: de::Visitor,
+            {
+                let ret = {
+                    let v = expect_val!(self.0, Text, "content");
+                    let v = try!(self.0.from_utf8(v));
+                    try!(KeyDeserializer::visit(v))
+                };
+                expect!(self.0, EndTagName(_), "end tag name");
+                Ok(ret)
+            }
+
+            fn visit_map<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
+                where V: de::Visitor,
+            {
+                visitor.visit_map(ContentVisitor::new_attr(&mut self.0))
+            }
+        }
+        de::Deserialize::deserialize(&mut Dummy(&mut self.0))
     }
 }
 
