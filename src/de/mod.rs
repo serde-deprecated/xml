@@ -351,15 +351,6 @@ impl<'a, Iter: 'a> de::VariantVisitor for VariantVisitor<'a, Iter>
         expect!(self.0, EndTagName(_), "end tag name");
         Ok(ret)
     }
-
-    /// `visit_struct` is called when deserializing a struct-like variant
-    fn visit_struct<V>(&mut self, _fields: &'static [&'static str], mut visitor: V) -> Result<V::Value, Self::Error>
-        where V: de::Visitor,
-    {
-        expect!(self.0, StartTagClose, "start tag close");
-        let ret = try!(visitor.visit_map(ContentVisitor::new_attr(self.0)));
-        Ok(ret)
-    }
 }
 
 struct UnitDeserializer;
