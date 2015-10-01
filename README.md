@@ -1,4 +1,8 @@
+[![Build Status](https://travis-ci.org/serde-rs/xml.svg?branch=master)](https://travis-ci.org/serde-rs/xml)
+
 # serde-xml
+
+xml deserialization code for the serde crate
 
 ## current state
 - [x] xml to struct deserialization
