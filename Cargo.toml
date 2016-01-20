@@ -1,6 +1,6 @@
 [package]
 name = "serde_xml"
-version = "0.6.0"
+version = "0.6.1"
 authors = ["Oliver Schneider <serde-xml98198@oli-obk.de>"]
 license-file = "LICENSE"
 description = "xml support for rust-serde"
