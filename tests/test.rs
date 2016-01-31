@@ -82,6 +82,33 @@ fn test_namespaces() {
 }
 
 #[test]
+fn test_forwarded_namespace() {
+    #[derive(PartialEq, Serialize, Deserialize, Debug)]
+    struct Graphml {
+        #[serde(rename="xsi:schemaLocation")]
+        schema_location: String
+    }
+    let s = r#"
+    <?xml version="1.0" encoding="UTF-8"?>
+    <graphml xmlns="http://graphml.graphdrawing.org/xmlns"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns
+        http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+
+
+    </graphml>"#;
+    test_parse_ok(&[
+         (
+                s,
+                Graphml {
+                    schema_location: "http://graphml.graphdrawing.org/xmlns
+        http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd".to_string()
+                },
+          ),
+    ]);
+}
+
+#[test]
 fn test_parse_string() {
 
     test_parse_ok(&[
