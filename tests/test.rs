@@ -623,6 +623,25 @@ fn test_parse_attributes() {
         }}
     ),
     ]);
+
+    #[derive(PartialEq, Debug, Serialize, Deserialize)]
+    struct D {
+        d1: Option<A>,
+    }
+    test_parse_ok(&[
+    (
+        r#"<D><d1 a1="What is the answer to the ultimate question?">42</d1></D>"#,
+        D { 
+            d1: Some(
+                A {
+                    a1: "What is the answer to the ultimate question?".to_string(),
+                    a2: 42,
+                }
+            )
+        }
+    ),
+    ]);
+
 }
 
 #[test]
