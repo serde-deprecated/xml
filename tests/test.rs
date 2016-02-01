@@ -647,7 +647,7 @@ fn test_parse_attributes() {
     test_parse_ok(&[
     (
         r#"<D><d1 a1="What is the answer to the ultimate question?">42</d1></D>"#,
-        D { 
+        D {
             d1: Some(
                 A {
                     a1: "What is the answer to the ultimate question?".to_string(),
