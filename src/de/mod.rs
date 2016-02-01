@@ -90,9 +90,8 @@ where Iter: Iterator<Item=io::Result<u8>>,
     {
         debug!("InnerDeserializer::visit_option\n");
         match try!(self.0.ch()) {
-            StartTagClose => visitor.visit_some(self),
             EmptyElementEnd(_) => visitor.visit_none(),
-            _ => Err(self.0.expected("start tag close")),
+            _ => visitor.visit_some(self),
         }
     }
 
