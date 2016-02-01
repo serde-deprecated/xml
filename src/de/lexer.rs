@@ -491,7 +491,7 @@ impl<Iter> XmlIterator<Iter>
             Ok(ch) => ch,
             Err(e) => return Err(self.lexer_error(e)),
         };
-        debug!(" -> {:?}\n", self.ch());
+        debug!(" -> {:?}", self.ch());
         self.ch()
     }
 }

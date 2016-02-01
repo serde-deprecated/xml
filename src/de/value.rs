@@ -25,7 +25,7 @@ impl de::Deserializer for Deserializer {
         where V: de::Visitor,
     {
         use self::MapDeserializerState::*;
-        debug!("value::Deserializer::visit {:?}\n", self.value);
+        debug!("value::Deserializer::visit {:?}", self.value);
         let el = match self.value.take() {
             Some(value) => value,
             None => { return Err(de::Error::end_of_stream()); }
@@ -49,7 +49,7 @@ impl de::Deserializer for Deserializer {
     fn visit_option<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
     {
-        debug!("value::Deserializer::visit_option\n");
+        debug!("value::Deserializer::visit_option");
         if self.value.is_none() {
             return Err(de::Error::end_of_stream());
         };
@@ -64,7 +64,7 @@ impl de::Deserializer for Deserializer {
     fn visit_enum<V>(&mut self, _name: &str, _variants: &'static [&'static str], mut visitor: V) -> Result<V::Value, Error>
         where V: de::EnumVisitor,
     {
-        debug!("value::Deserializer::visit_enum\n");
+        debug!("value::Deserializer::visit_enum");
         visitor.visit(VariantVisitor(self.value.take()))
     }
 
@@ -73,7 +73,7 @@ impl de::Deserializer for Deserializer {
         where V: de::Visitor,
     {
         use self::MapDeserializerState::*;
-        debug!("value::Deserializer::visit_map {:?}\n", self.value);
+        debug!("value::Deserializer::visit_map {:?}", self.value);
         let el = match self.value.take() {
             Some(value) => value,
             None => { return Err(de::Error::end_of_stream()); }
@@ -98,7 +98,7 @@ impl de::VariantVisitor for VariantVisitor
     fn visit_variant<V>(&mut self) -> Result<V, Self::Error>
         where V: de::Deserialize
     {
-        debug!("VariantVisitor::visit_variant\n");
+        debug!("VariantVisitor::visit_variant");
         if let Some(s) = self.0.as_mut().unwrap().attributes.remove("xsi:type") {
             de::Deserialize::deserialize(&mut StringDeserializer(s.into_iter().next()))
         } else {
@@ -156,12 +156,12 @@ impl<I> de::Deserializer for SeqDeserializer<I>
     fn visit<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
     {
-        debug!("seqdeserializer::visit\n");
+        debug!("seqdeserializer::visit");
         if let Some(el) = self.0.next() {
-            debug!("el\n");
+            debug!("el");
             de::Deserialize::deserialize(&mut Deserializer::new(el))
         } else {
-            debug!("unit\n");
+            debug!("unit");
             visitor.visit_unit()
         }
     }
@@ -170,7 +170,7 @@ impl<I> de::Deserializer for SeqDeserializer<I>
     fn visit_enum<V>(&mut self, _name: &str, _variants: &'static [&'static str], mut visitor: V) -> Result<V::Value, Error>
         where V: de::EnumVisitor,
     {
-        debug!("value::Deserializer::visit_enum\n");
+        debug!("value::Deserializer::visit_enum");
         visitor.visit(VariantVisitor(self.0.next()))
     }
 
@@ -178,7 +178,7 @@ impl<I> de::Deserializer for SeqDeserializer<I>
     fn visit_seq<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
     {
-        debug!("seqdeserializer::visit_seq\n");
+        debug!("seqdeserializer::visit_seq");
         visitor.visit_seq(self)
     }
 }
@@ -192,10 +192,10 @@ impl<I> de::SeqVisitor for SeqDeserializer<I>
     fn visit<T>(&mut self) -> Result<Option<T>, Error>
         where T: de::Deserialize
     {
-        debug!("SeqDeserializer::visit\n");
+        debug!("SeqDeserializer::visit");
         match self.0.next() {
             Some(value) => {
-                debug!("value: {:?}\n", value);
+                debug!("value: {:?}", value);
                 de::Deserialize::deserialize(&mut Deserializer::new(value))
                     .map(|v| Some(v))
             }
@@ -204,7 +204,7 @@ impl<I> de::SeqVisitor for SeqDeserializer<I>
     }
 
     fn end(&mut self) -> Result<(), Error> {
-        debug!("SeqDeserializer::end\n");
+        debug!("SeqDeserializer::end");
         if self.0.len() == 0 {
             Ok(())
         } else {
@@ -259,7 +259,7 @@ impl de::MapVisitor for MapDeserializer {
     }
 
     fn end(&mut self) -> Result<(), Error> {
-        debug!("value::MapDeserializer::end\n");
+        debug!("value::MapDeserializer::end");
         Ok(())
     }
 
@@ -267,7 +267,7 @@ impl de::MapVisitor for MapDeserializer {
         where V: de::Deserialize,
     {
         use self::MapDeserializerState::*;
-        debug!("value::MapDeserializer::missing_field {:?} {}\n", self.state, field);
+        debug!("value::MapDeserializer::missing_field {:?} {}", self.state, field);
 
         // See if the type can deserialize from a unit.
         struct UnitDeserializer;
@@ -290,7 +290,7 @@ impl de::MapVisitor for MapDeserializer {
 
         match self.state {
             Inner if field == "$value" => {
-                debug!("value\n");
+                debug!("value");
                 self.state = Done;
                 match mem::replace(&mut self.members, Content::Nothing) {
                     Content::Text(s) =>
@@ -301,11 +301,11 @@ impl de::MapVisitor for MapDeserializer {
                 }
             },
             Inner => if let Some(v) = self.attributes.remove(field) {
-                debug!("attr\n");
+                debug!("attr");
                 de::Deserialize::deserialize(&mut SeqDeserializer(v.map(|s| Element::new_text(s))))
             } else if let Content::Members(ref mut m) = self.members {
                 if let Some(el) = m.remove(field) {
-                    debug!("el: {:?}\n", el);
+                    debug!("el: {:?}", el);
                     de::Deserialize::deserialize(&mut SeqDeserializer(el.into_iter()))
                 } else {
                     de::Deserialize::deserialize(&mut UnitDeserializer)
@@ -325,7 +325,7 @@ impl de::Deserializer for MapDeserializer {
     fn visit<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
     {
-        debug!("MapDeserializer!\n");
+        debug!("MapDeserializer!");
         visitor.visit_map(self)
     }
 }
