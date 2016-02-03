@@ -1,4 +1,3 @@
-#![deny(unused_must_use)]
 use error::*;
 use serde::iter;
 use self::LexerError::*;

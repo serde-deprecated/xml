@@ -1,4 +1,3 @@
-#![deny(unused_must_use, unused_imports)]
 use error::*;
 use error::ErrorCode::*;
 use serde::de;
