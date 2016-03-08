@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/serde-rs/xml.svg?branch=master)](https://travis-ci.org/serde-rs/xml)
+[![Clippy Linting Result](http://clippy.bashy.io/github/serde-rs/xml/master/badge.svg)](http://clippy.bashy.io/github/serde-rs/xml/master/log)
 
 # serde-xml
 
