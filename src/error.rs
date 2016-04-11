@@ -91,9 +91,8 @@ impl From<io::Error> for Error {
 }
 
 impl de::Error for Error {
-    fn syntax(msg: &str) -> Error {
-        debug!("Syntax error: {}", msg);
-        Error::SyntaxError(SerdeExpectedSomeValue(msg.to_string()), 0, 0)
+    fn custom<T: Into<String>>(msg: T) -> Error {
+        Error::SyntaxError(SerdeExpectedSomeValue(msg.into()), 0, 0)
     }
 
     fn unknown_field(field: &str) -> Error {

@@ -20,11 +20,11 @@ impl de::Deserializer for Deserializer {
     type Error = Error;
 
     #[inline]
-    fn visit<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
+    fn deserialize<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
     {
         use self::MapDeserializerState::*;
-        debug!("value::Deserializer::visit {:?}", self.value);
+        debug!("value::Deserializer::deserialize {:?}", self.value);
         let el = match self.value.take() {
             Some(value) => value,
             None => { return Err(de::Error::end_of_stream()); }
@@ -45,10 +45,10 @@ impl de::Deserializer for Deserializer {
     }
 
     #[inline]
-    fn visit_option<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
+    fn deserialize_option<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
     {
-        debug!("value::Deserializer::visit_option");
+        debug!("value::Deserializer::deserialize_option");
         if self.value.is_none() {
             return Err(de::Error::end_of_stream());
         };
@@ -60,24 +60,24 @@ impl de::Deserializer for Deserializer {
     }
 
     #[inline]
-    fn visit_enum<V>(&mut self, _name: &str, _variants: &'static [&'static str], mut visitor: V) -> Result<V::Value, Error>
+    fn deserialize_enum<V>(&mut self, _name: &str, _variants: &'static [&'static str], mut visitor: V) -> Result<V::Value, Error>
         where V: de::EnumVisitor,
     {
-        debug!("value::Deserializer::visit_enum");
+        debug!("value::Deserializer::deserialize_enum");
         visitor.visit(VariantVisitor(self.value.take()))
     }
 
     #[inline]
-    fn visit_map<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
+    fn deserialize_map<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
     {
         use self::MapDeserializerState::*;
-        debug!("value::Deserializer::visit_map {:?}", self.value);
+        debug!("value::Deserializer::deserialize_map {:?}", self.value);
         let el = match self.value.take() {
             Some(value) => value,
             None => { return Err(de::Error::end_of_stream()); }
         };
-        visitor.visit_map( MapDeserializer {
+        visitor.visit_map(MapDeserializer {
             attributes: el.attributes
                           .into_iter()
                           .map(|(k, v)| (k, v.into_iter()))
@@ -152,10 +152,10 @@ impl<I> de::Deserializer for SeqDeserializer<I>
     type Error = Error;
 
     #[inline]
-    fn visit<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
+    fn deserialize<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
     {
-        debug!("seqdeserializer::visit");
+        debug!("seqdeserializer::deserialize");
         if let Some(el) = self.0.next() {
             debug!("el");
             de::Deserialize::deserialize(&mut Deserializer::new(el))
@@ -166,18 +166,18 @@ impl<I> de::Deserializer for SeqDeserializer<I>
     }
 
     #[inline]
-    fn visit_enum<V>(&mut self, _name: &str, _variants: &'static [&'static str], mut visitor: V) -> Result<V::Value, Error>
+    fn deserialize_enum<V>(&mut self, _name: &str, _variants: &'static [&'static str], mut visitor: V) -> Result<V::Value, Error>
         where V: de::EnumVisitor,
     {
-        debug!("value::Deserializer::visit_enum");
+        debug!("value::Deserializer::deserialize_enum");
         visitor.visit(VariantVisitor(self.0.next()))
     }
 
     #[inline]
-    fn visit_seq<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
+    fn deserialize_seq<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
     {
-        debug!("seqdeserializer::visit_seq");
+        debug!("seqdeserializer::deserialize_seq");
         visitor.visit_seq(self)
     }
 }
@@ -191,7 +191,7 @@ impl<I> de::SeqVisitor for SeqDeserializer<I>
     fn visit<T>(&mut self) -> Result<Option<T>, Error>
         where T: de::Deserialize
     {
-        debug!("SeqDeserializer::visit");
+        debug!("SeqDeserializer::deserialize");
         match self.0.next() {
             Some(value) => {
                 debug!("value: {:?}", value);
@@ -223,7 +223,7 @@ impl de::Deserializer for StringDeserializer {
     type Error = Error;
 
     #[inline]
-    fn visit<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
+    fn deserialize<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
     {
         visitor.visit_string(self.0.take().unwrap())
@@ -274,13 +274,13 @@ impl de::MapVisitor for MapDeserializer {
         impl de::Deserializer for UnitDeserializer {
             type Error = Error;
 
-            fn visit<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
+            fn deserialize<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
                 where V: de::Visitor,
             {
                 visitor.visit_unit()
             }
 
-            fn visit_option<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
+            fn deserialize_option<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
                 where V: de::Visitor,
             {
                 visitor.visit_none()
@@ -321,7 +321,7 @@ impl de::Deserializer for MapDeserializer {
     type Error = Error;
 
     #[inline]
-    fn visit<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
+    fn deserialize<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
     {
         debug!("MapDeserializer!");
