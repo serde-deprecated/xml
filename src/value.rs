@@ -34,7 +34,7 @@ impl de::Deserialize for Element {
     fn deserialize<D>(deserializer: &mut D) -> Result<Element, D::Error>
         where D: de::Deserializer,
     {
-        deserializer.visit_map(ElementVisitor)
+        deserializer.deserialize_map(ElementVisitor)
     }
 }
 
@@ -47,7 +47,7 @@ impl de::Deserialize for Helper {
     fn deserialize<D>(deserializer: &mut D) -> Result<Helper, D::Error>
         where D: de::Deserializer,
     {
-        let el = try!(deserializer.visit_map(ElementVisitor));
+        let el = try!(deserializer.deserialize_map(ElementVisitor));
         Ok(match (el.attributes.is_empty(), el.members) {
             (true, Content::Text(s)) => Helper::Text(s),
             (_, c) => Helper::Member(Element {
