@@ -69,7 +69,7 @@ where Iter: Iterator<Item=io::Result<u8>>,
             StartTagClose => {
                 match {
                     let v = expect_val!(self.0, Text, "text");
-                    let v = try!(self.0.from_utf8(v));
+                    let v = try!(self.0.check_utf8(v));
                     visitor.visit_str(v)
                 } { // try! is broken sometimes
                     Ok(v) => {
@@ -224,7 +224,7 @@ impl<Iter> de::Deserializer for Deserializer<Iter>
         let v = try!(InnerDeserializer(&mut self.rdr, is_seq).deserialize(visitor));
         assert!(!*is_seq);
         match try!(self.rdr.ch()) {
-            EndTagName(_) => {},
+            EndTagName(_) |
             EmptyElementEnd(_) => {},
             _ => return Err(self.rdr.expected("end tag")),
         }
@@ -247,7 +247,7 @@ impl<Iter> de::Deserializer for Deserializer<Iter>
         let v = try!(v);
         assert!(!*is_seq);
         match try!(self.rdr.ch()) {
-            EndTagName(_) => {},
+            EndTagName(_) |
             EmptyElementEnd(_) => {},
             _ => return Err(self.rdr.expected("end tag")),
         }
@@ -310,7 +310,7 @@ impl<'a, Iter: 'a> de::VariantVisitor for VariantVisitor<'a, Iter>
             return Err(self.0.error(Expected("attribute xsi:type")));
         }
         let v = expect_val!(self.0, AttributeValue, "attribute value");
-        let v = try!(self.0.from_utf8(v));
+        let v = try!(self.0.check_utf8(v));
         KeyDeserializer::deserialize(v)
     }
 
@@ -350,7 +350,7 @@ impl<'a, Iter: 'a> de::VariantVisitor for VariantVisitor<'a, Iter>
             {
                 let ret = {
                     let v = expect_val!(self.0, Text, "content");
-                    let v = try!(self.0.from_utf8(v));
+                    let v = try!(self.0.check_utf8(v));
                     try!(KeyDeserializer::deserialize(v))
                 };
                 expect!(self.0, EndTagName(_), "end tag name");
@@ -470,8 +470,8 @@ impl<'a, Iter> de::MapVisitor for ContentVisitor<'a, Iter>
         match match (&self.state, try!(self.de.ch())) {
             (&Attribute, EmptyElementEnd(_)) => return Ok(None),
             (&Attribute, StartTagClose) => 0,
-            (&Attribute, AttributeName(n)) => return Ok(Some(try!(KeyDeserializer::deserialize(try!(self.de.from_utf8(n)))))),
-            (&Element, StartTagName(n)) => return Ok(Some(try!(KeyDeserializer::deserialize(try!(self.de.from_utf8(n)))))),
+            (&Attribute, AttributeName(n)) => return Ok(Some(try!(KeyDeserializer::deserialize(try!(self.de.check_utf8(n)))))),
+            (&Element, StartTagName(n)) => return Ok(Some(try!(KeyDeserializer::deserialize(try!(self.de.check_utf8(n)))))),
             (&Inner, Text(_)) => 1,
             (&Inner, _) => 4,
             (&Value, EndTagName(_)) => return Ok(None),
@@ -493,7 +493,7 @@ impl<'a, Iter> de::MapVisitor for ContentVisitor<'a, Iter>
                 self.state = Value;
                 self.visit_key()
             },
-            2 => {
+            2 | 5 => {
                 // hack for Element, EmptyElementEnd
                 // happens when coming out of an empty element which is an inner value
                 // maybe catch in visit_value?
@@ -512,10 +512,6 @@ impl<'a, Iter> de::MapVisitor for ContentVisitor<'a, Iter>
                 self.state = Element;
                 self.visit_key()
             },
-            5 => {
-                try!(self.de.bump());
-                self.visit_key()
-            }
             _ => unreachable!()
         }
     }
@@ -529,7 +525,7 @@ impl<'a, Iter> de::MapVisitor for ContentVisitor<'a, Iter>
             Attribute => {
                 let v = {
                     let v = expect_val!(self.de, AttributeValue, "attribute value");
-                    let v = try!(self.de.from_utf8(v));
+                    let v = try!(self.de.check_utf8(v));
                     try!(KeyDeserializer::deserialize(v))
                 };
                 try!(self.de.bump());
@@ -542,7 +538,7 @@ impl<'a, Iter> de::MapVisitor for ContentVisitor<'a, Iter>
                 debug!("is_seq: {}", is_seq);
                 if !is_seq {
                     match try!(self.de.ch()) {
-                        EmptyElementEnd(_) => {},
+                        EmptyElementEnd(_) |
                         EndTagName(_) => {},
                         _ => return Err(self.de.expected("tag close")),
                     }
@@ -553,7 +549,7 @@ impl<'a, Iter> de::MapVisitor for ContentVisitor<'a, Iter>
             Value => {
                 let v = {
                     let v = is_val!(self.de, Text, "text");
-                    let v = try!(self.de.from_utf8(v));
+                    let v = try!(self.de.check_utf8(v));
                     try!(KeyDeserializer::deserialize(v))
                 };
                 try!(self.de.bump());
@@ -655,8 +651,8 @@ pub fn from_iter<I, T>(iter: I) -> Result<T, Error>
 }
 
 /// Decodes an xml value from a string
-pub fn from_str<'a, T>(s: &'a str) -> Result<T, Error>
+pub fn from_str<T>(s: &str) -> Result<T, Error>
     where T: de::Deserialize
 {
-    from_iter(s.bytes().map(|c| Ok(c)))
+    from_iter(s.bytes().map(Ok))
 }

@@ -196,7 +196,7 @@ impl<I> de::SeqVisitor for SeqDeserializer<I>
             Some(value) => {
                 debug!("value: {:?}", value);
                 de::Deserialize::deserialize(&mut Deserializer::new(value))
-                    .map(|v| Some(v))
+                    .map(Some)
             }
             None => Ok(None),
         }
@@ -301,7 +301,7 @@ impl de::MapVisitor for MapDeserializer {
             },
             Inner => if let Some(v) = self.attributes.remove(field) {
                 debug!("attr");
-                de::Deserialize::deserialize(&mut SeqDeserializer(v.map(|s| Element::new_text(s))))
+                de::Deserialize::deserialize(&mut SeqDeserializer(v.map(Element::new_text)))
             } else if let Content::Members(ref mut m) = self.members {
                 if let Some(el) = m.remove(field) {
                     debug!("el: {:?}", el);

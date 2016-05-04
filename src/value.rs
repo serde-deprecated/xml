@@ -90,7 +90,7 @@ impl de::Visitor for ElementVisitor {
                 Content::Text(_)=> unreachable!(),
                 Content::Members(mut map) => {
                     map.entry(key)
-                       .or_insert(vec![])
+                       .or_insert_with(Vec::new)
                        .push(try!(visitor.visit_value()));
                     content = Content::Members(map); // move back
                 },
@@ -103,7 +103,7 @@ impl de::Visitor for ElementVisitor {
                             content = Content::Members(m);
                         },
                         Helper::Text(s) => {
-                            attributes.entry(key).or_insert(vec![]).push(s);
+                            attributes.entry(key).or_insert_with(Vec::new).push(s);
                             content = Content::Nothing; // move back
                         }
                     }

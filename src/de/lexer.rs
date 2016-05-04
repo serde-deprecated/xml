@@ -77,9 +77,9 @@ impl<Iter> XmlIterator<Iter>
         self.error(ErrorCode::LexingError(reason))
     }
 
-    pub fn from_utf8<'a>(&self, txt: &'a[u8]) -> Result<&'a str, Error> {
+    pub fn check_utf8<'a>(&self, txt: &'a[u8]) -> Result<&'a str, Error> {
         let txt = str::from_utf8(txt);
-        txt.or(Err(self.error(ErrorCode::NotUtf8)))
+        txt.or_else(|_| Err(self.error(ErrorCode::NotUtf8)))
     }
 
     #[inline]
@@ -103,9 +103,10 @@ impl<Iter> XmlIterator<Iter>
     }
 
     fn peek_char(&mut self) -> Result<u8, LexerError> {
-        match try!(self.rdr.peek().ok_or(LexerError::EOF)) {
-            &Ok(c) => Ok(c),
-            &Err(_) => Err(LexerError::Io),
+        match self.rdr.peek() {
+            Some(&Ok(val)) => Ok(val),
+            Some(&Err(_)) => Err(LexerError::Io),
+            None => Err(LexerError::EOF),
         }
     }
 
