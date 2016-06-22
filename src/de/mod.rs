@@ -163,10 +163,10 @@ impl<'a> de::Deserializer for KeyDeserializer<'a> {
     }
 
     #[inline]
-    fn deserialize_option<V>(&mut self, _visitor: V) -> Result<V::Value, Error>
+    fn deserialize_option<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
     {
-        unimplemented!()
+        visitor.visit_some(self)
     }
 
     #[inline]

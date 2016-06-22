@@ -314,6 +314,19 @@ fn test_parse_struct() {
                 d: None,
             },
         ),
+        (
+            "<Simple d=\"Foo\"><!-- this is a comment -->
+                <c>abc</c>
+                <a/>
+                <b>2</b>
+            </Simple>",
+            Simple {
+                a: (),
+                b: 2,
+                c: "abc".to_string(),
+                d: Some("Foo".to_string()),
+            },
+        ),
     ]);
 }
 
