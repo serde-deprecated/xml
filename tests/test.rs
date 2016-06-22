@@ -30,6 +30,7 @@ struct Simple {
     a: (),
     b: usize,
     c: String,
+    d: Option<String>,
 }
 
 #[derive(PartialEq, Debug, Serialize, Deserialize)]
@@ -178,10 +179,17 @@ fn test_parse_enum() {
     test_parse_ok(&[
         ("<Animal xsi:type=\"Dog\"/>", Dog),
         ("<Animal xsi:type=\"Frog\">Quak</Animal>", Frog("Quak".to_string())),
-        ("<Animal xsi:type=\"Ant\"><a/><c>bla</c><b>15</b></Animal>", Ant(Simple{
+        ("<Animal xsi:type=\"Ant\"><a/><c>bla</c><b>15</b><d>Foo</d></Animal>", Ant(Simple{
             a: (),
             b: 15,
             c: "bla".to_string(),
+            d: Some("Foo".to_string()),
+        })),
+        ("<Animal xsi:type=\"Ant\"><a/><c>bla</c><b>15</b><d/></Animal>", Ant(Simple{
+            a: (),
+            b: 15,
+            c: "bla".to_string(),
+            d: None,
         })),
         (
             "<Animal xsi:type=\"Cat\"><age>42</age><name>Shere Khan</name></Animal>",
@@ -283,11 +291,13 @@ fn test_parse_struct() {
                 <c>abc</c>
                 <a/>
                 <b>2</b>
+                <d/>
             </Simple>",
             Simple {
                 a: (),
                 b: 2,
                 c: "abc".to_string(),
+                d: None,
             },
         ),
         (
@@ -295,11 +305,13 @@ fn test_parse_struct() {
                 <c>abc</c>
                 <a/>
                 <b>2</b>
+                <d/>
             </Simple>",
             Simple {
                 a: (),
                 b: 2,
                 c: "abc".to_string(),
+                d: None,
             },
         ),
     ]);
