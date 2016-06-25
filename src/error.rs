@@ -22,8 +22,6 @@ pub enum ErrorCode {
 
 impl fmt::Debug for ErrorCode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use std::fmt::Debug;
-
         match *self {
             EOF => "EOF".fmt(f),
             RawValueCannotHaveAttributes => "raw value cannot have attributes".fmt(f),
