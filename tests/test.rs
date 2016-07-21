@@ -808,3 +808,36 @@ fn test_parse_hierarchies() {
     ),
     ]);
 }
+
+
+#[test]
+fn unknown_field() {
+    #[derive(Deserialize, Debug, PartialEq, Eq, Serialize)]
+    struct A {
+        other: Vec<Other>,
+    }
+
+    #[derive(Deserialize, Debug, PartialEq, Eq, Serialize)]
+    struct Other {
+        d: i32,
+    }
+    test_parse_ok(&[
+        (
+            "<a>
+               <b>
+                 <c>5</c>
+               </b>
+               <other>
+                 <d>6</d>
+               </other>
+            </a>",
+            A {
+                other: vec![
+                    Other {
+                        d: 6,
+                    },
+                ]
+            },
+        )
+    ]);
+}

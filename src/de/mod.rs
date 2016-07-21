@@ -5,6 +5,75 @@ use serde::de;
 use IsWhitespace;
 
 use std::io;
+
+macro_rules! de_forward_to_deserialize {
+    ($($func:ident),*) => {
+        $(de_forward_to_deserialize!{func: $func})*
+    };
+    (func: deserialize_unit_struct) => {
+        #[inline]
+        fn deserialize_unit_struct<__V>(&mut self, _: &str, visitor: __V) -> Result<__V::Value, Self::Error>
+            where __V: de::Visitor {
+            self.deserialize_unit(visitor)
+        }
+    };
+    (func: deserialize_newtype_struct) => {
+        #[inline]
+        fn deserialize_newtype_struct<__V>(&mut self, _: &str, visitor: __V) -> Result<__V::Value, Self::Error>
+            where __V: de::Visitor {
+            self.deserialize(visitor)
+        }
+    };
+    (func: deserialize_tuple) => {
+        de_forward_to_deserialize!{tup_fn: deserialize_tuple}
+    };
+    (func: deserialize_seq_fixed_size) => {
+        de_forward_to_deserialize!{tup_fn: deserialize_seq_fixed_size}
+    };
+    (func: deserialize_ignored_any) => {};
+    (func: deserialize_tuple_struct) => {
+        #[inline]
+        fn deserialize_tuple_struct<__V>(&mut self, _: &str, _: usize, visitor: __V) -> Result<__V::Value, Self::Error>
+            where __V: de::Visitor {
+            self.deserialize_seq(visitor)
+        }
+    };
+    (func: deserialize_struct) => {
+        #[inline]
+        fn deserialize_struct<__V>(&mut self, _: &str, _: &[&str], visitor: __V) -> Result<__V::Value, Self::Error>
+            where __V: de::Visitor {
+            self.deserialize_map(visitor)
+        }
+    };
+    (func: deserialize_enum) => {
+        #[inline]
+        fn deserialize_enum<__V>(&mut self, _: &str, _: &[&str], _: __V) -> Result<__V::Value, Self::Error>
+            where __V: de::EnumVisitor {
+            Err(de::Error::invalid_type(de::Type::Enum))
+        }
+    };
+    (tup_fn: $func: ident) => {
+        #[inline]
+        fn $func<__V>(&mut self, _: usize, visitor: __V) -> Result<__V::Value, Self::Error>
+            where __V: de::Visitor {
+            self.deserialize_seq(visitor)
+        }
+    };
+    (func: deserialize_tagged_value) => {
+        fn deserialize_tagged_value<__V>(&mut self) -> Result<__V, Self::Error>
+            where __V: de::Deserialize {
+            Err(de::Error::invalid_type(de::Type::Tagged))
+        }
+    };
+    (func: $func:ident) => {
+        #[inline]
+        fn $func<__V>(&mut self, visitor: __V) -> Result<__V::Value, Self::Error>
+            where __V: de::Visitor {
+            self.deserialize(visitor)
+        }
+    };
+}
+
 mod lexer;
 pub mod value;
 use self::lexer::Lexical::*;
@@ -53,12 +122,56 @@ impl<'a, Iter: Iterator<Item=io::Result<u8>> + 'a> InnerDeserializer<'a, Iter> {
         let deser = de::Deserialize::deserialize(&mut InnerDeserializer(xi, &mut is_seq));
         (is_seq, deser)
     }
+    fn eat(&mut self) -> Result<(), Error> {
+        debug!("InnerDeserializer::eat");
+        loop {
+            match try!(self.0.bump()) {
+                Text(_) => {},
+                StartTagName(_) => try!(self.eat_attributes()),
+                EndTagName(_) => return Ok(()),
+                _ => return Err(self.0.expected("tags or text")),
+            }
+        }
+    }
+    fn eat_attributes(&mut self) -> Result<(), Error> {
+        debug!("InnerDeserializer::eat_attributes");
+        loop {
+            match try!(self.0.bump()) {
+                AttributeName(_) |
+                AttributeValue(_) => {},
+                StartTagClose |
+                EmptyElementEnd(_) => return self.eat(),
+                _ => return Err(self.0.expected("attributes or tag close")),
+            }
+        }
+    }
 }
 
 impl<'a, Iter> de::Deserializer for InnerDeserializer<'a, Iter>
 where Iter: Iterator<Item=io::Result<u8>>,
 {
     type Error = Error;
+
+    de_forward_to_deserialize!{
+        deserialize_bool,
+        deserialize_f64, deserialize_f32,
+        deserialize_u8, deserialize_u16, deserialize_u32, deserialize_u64, deserialize_usize,
+        deserialize_i8, deserialize_i16, deserialize_i32, deserialize_i64, deserialize_isize,
+        deserialize_char, deserialize_str, deserialize_string,
+        deserialize_ignored_any,
+        deserialize_bytes,
+        deserialize_unit,
+        deserialize_seq_fixed_size,
+        deserialize_newtype_struct, deserialize_struct_field,
+        deserialize_tuple,
+        deserialize_struct
+    }
+
+    fn deserialize_ignored_any<V>(&mut self, mut visitor: V) -> Result<V::Value, Self::Error> where V: de::Visitor {
+        debug!("InnerDeserializer::deserialize_ignored_any");
+        try!(self.eat());
+        visitor.visit_unit()
+    }
 
     #[inline]
     fn deserialize<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
@@ -154,6 +267,25 @@ impl<'a> KeyDeserializer<'a> {
 impl<'a> de::Deserializer for KeyDeserializer<'a> {
     type Error = Error;
 
+    de_forward_to_deserialize!{
+        deserialize_bool,
+        deserialize_f64, deserialize_f32,
+        deserialize_u8, deserialize_u16, deserialize_u32, deserialize_u64, deserialize_usize,
+        deserialize_i8, deserialize_i16, deserialize_i32, deserialize_i64, deserialize_isize,
+        deserialize_char, deserialize_str, deserialize_string,
+        deserialize_ignored_any,
+        deserialize_bytes,
+        deserialize_unit_struct, deserialize_unit,
+        deserialize_seq_fixed_size,
+        deserialize_map, deserialize_newtype_struct, deserialize_struct_field,
+        deserialize_tuple,
+        deserialize_struct, deserialize_tuple_struct
+    }
+
+    fn deserialize_ignored_any<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error> where V: de::Visitor {
+        self.deserialize(visitor)
+    }
+
     #[inline]
     fn deserialize<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
@@ -212,6 +344,25 @@ impl<Iter> de::Deserializer for Deserializer<Iter>
     where Iter: Iterator<Item=io::Result<u8>>,
 {
     type Error = Error;
+
+    de_forward_to_deserialize!{
+        deserialize_bool,
+        deserialize_f64, deserialize_f32,
+        deserialize_u8, deserialize_u16, deserialize_u32, deserialize_u64, deserialize_usize,
+        deserialize_i8, deserialize_i16, deserialize_i32, deserialize_i64, deserialize_isize,
+        deserialize_char, deserialize_str, deserialize_string,
+        deserialize_ignored_any,
+        deserialize_bytes,
+        deserialize_unit_struct, deserialize_unit,
+        deserialize_seq_fixed_size,
+        deserialize_newtype_struct, deserialize_struct_field,
+        deserialize_tuple,
+        deserialize_struct, deserialize_tuple_struct
+    }
+
+    fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error> where V: de::Visitor {
+        unimplemented!()
+    }
 
     #[inline]
     fn deserialize<V>(&mut self, visitor: V) -> Result<V::Value, Error>
@@ -345,6 +496,23 @@ impl<'a, Iter: 'a> de::VariantVisitor for VariantVisitor<'a, Iter>
         impl<'a, Iter: Iterator<Item=io::Result<u8>> + 'a> de::Deserializer for Dummy<'a, Iter> {
             type Error = Error;
 
+            de_forward_to_deserialize!{
+                deserialize_bool,
+                deserialize_f64, deserialize_f32,
+                deserialize_u8, deserialize_u16, deserialize_u32, deserialize_u64, deserialize_usize,
+                deserialize_i8, deserialize_i16, deserialize_i32, deserialize_i64, deserialize_isize,
+                deserialize_char, deserialize_str, deserialize_string,
+                deserialize_ignored_any,
+                deserialize_bytes,
+                deserialize_unit_struct, deserialize_unit,
+                deserialize_seq, deserialize_seq_fixed_size,
+                deserialize_newtype_struct, deserialize_struct_field,
+                deserialize_tuple,
+                deserialize_enum,
+                deserialize_struct, deserialize_tuple_struct,
+                deserialize_option
+            }
+
             fn deserialize<V>(&mut self, _visitor: V) -> Result<V::Value, Error>
                 where V: de::Visitor,
             {
@@ -362,6 +530,10 @@ impl<'a, Iter: 'a> de::VariantVisitor for VariantVisitor<'a, Iter>
             {
                 visitor.visit_map(ContentVisitor::new_attr(&mut self.0))
             }
+
+            fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error> where V: de::Visitor {
+                unimplemented!()
+            }
         }
         de::Deserialize::deserialize(&mut Dummy(&mut self.0))
     }
@@ -371,6 +543,26 @@ struct UnitDeserializer;
 
 impl de::Deserializer for UnitDeserializer {
     type Error = Error;
+
+    de_forward_to_deserialize!{
+        deserialize_bool,
+        deserialize_f64, deserialize_f32,
+        deserialize_u8, deserialize_u16, deserialize_u32, deserialize_u64, deserialize_usize,
+        deserialize_i8, deserialize_i16, deserialize_i32, deserialize_i64, deserialize_isize,
+        deserialize_char, deserialize_str, deserialize_string,
+        deserialize_ignored_any,
+        deserialize_bytes,
+        deserialize_unit_struct, deserialize_unit,
+        deserialize_seq_fixed_size,
+        deserialize_newtype_struct, deserialize_struct_field,
+        deserialize_tuple,
+        deserialize_enum,
+        deserialize_struct, deserialize_tuple_struct
+    }
+
+    fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error> where V: de::Visitor {
+        unimplemented!()
+    }
 
     fn deserialize<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,

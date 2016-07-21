@@ -19,6 +19,25 @@ impl Deserializer {
 impl de::Deserializer for Deserializer {
     type Error = Error;
 
+    de_forward_to_deserialize!{
+        deserialize_bool,
+        deserialize_f64, deserialize_f32,
+        deserialize_u8, deserialize_u16, deserialize_u32, deserialize_u64, deserialize_usize,
+        deserialize_i8, deserialize_i16, deserialize_i32, deserialize_i64, deserialize_isize,
+        deserialize_char, deserialize_str, deserialize_string,
+        deserialize_ignored_any,
+        deserialize_bytes,
+        deserialize_unit_struct, deserialize_unit,
+        deserialize_seq, deserialize_seq_fixed_size,
+        deserialize_newtype_struct, deserialize_struct_field,
+        deserialize_tuple,
+        deserialize_struct, deserialize_tuple_struct
+    }
+
+    fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error> where V: de::Visitor {
+        unimplemented!()
+    }
+
     #[inline]
     fn deserialize<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
@@ -151,6 +170,26 @@ impl<I> de::Deserializer for SeqDeserializer<I>
 {
     type Error = Error;
 
+    de_forward_to_deserialize!{
+        deserialize_bool,
+        deserialize_f64, deserialize_f32,
+        deserialize_u8, deserialize_u16, deserialize_u32, deserialize_u64, deserialize_usize,
+        deserialize_i8, deserialize_i16, deserialize_i32, deserialize_i64, deserialize_isize,
+        deserialize_char, deserialize_str, deserialize_string,
+        deserialize_ignored_any,
+        deserialize_bytes,
+        deserialize_unit_struct, deserialize_unit,
+        deserialize_seq_fixed_size,
+        deserialize_map, deserialize_newtype_struct, deserialize_struct_field,
+        deserialize_tuple,
+        deserialize_struct, deserialize_tuple_struct,
+        deserialize_option
+    }
+
+    fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error> where V: de::Visitor {
+        unimplemented!()
+    }
+
     #[inline]
     fn deserialize<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
@@ -222,6 +261,27 @@ struct StringDeserializer(Option<String>);
 impl de::Deserializer for StringDeserializer {
     type Error = Error;
 
+    de_forward_to_deserialize!{
+        deserialize_bool,
+        deserialize_f64, deserialize_f32,
+        deserialize_u8, deserialize_u16, deserialize_u32, deserialize_u64, deserialize_usize,
+        deserialize_i8, deserialize_i16, deserialize_i32, deserialize_i64, deserialize_isize,
+        deserialize_char, deserialize_str, deserialize_string,
+        deserialize_ignored_any,
+        deserialize_bytes,
+        deserialize_unit_struct, deserialize_unit,
+        deserialize_seq, deserialize_seq_fixed_size,
+        deserialize_map, deserialize_newtype_struct, deserialize_struct_field,
+        deserialize_tuple,
+        deserialize_enum,
+        deserialize_struct, deserialize_tuple_struct,
+        deserialize_option
+    }
+
+    fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error> where V: de::Visitor {
+        unimplemented!()
+    }
+
     #[inline]
     fn deserialize<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
@@ -274,6 +334,26 @@ impl de::MapVisitor for MapDeserializer {
         impl de::Deserializer for UnitDeserializer {
             type Error = Error;
 
+            de_forward_to_deserialize!{
+                deserialize_bool,
+                deserialize_f64, deserialize_f32,
+                deserialize_u8, deserialize_u16, deserialize_u32, deserialize_u64, deserialize_usize,
+                deserialize_i8, deserialize_i16, deserialize_i32, deserialize_i64, deserialize_isize,
+                deserialize_char, deserialize_str, deserialize_string,
+                deserialize_ignored_any,
+                deserialize_bytes,
+                deserialize_unit_struct, deserialize_unit,
+                deserialize_seq, deserialize_seq_fixed_size,
+                deserialize_map, deserialize_newtype_struct, deserialize_struct_field,
+                deserialize_tuple,
+                deserialize_enum,
+                deserialize_struct, deserialize_tuple_struct
+            }
+
+            fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error> where V: de::Visitor {
+                unimplemented!()
+            }
+
             fn deserialize<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
                 where V: de::Visitor,
             {
@@ -319,6 +399,27 @@ impl de::MapVisitor for MapDeserializer {
 
 impl de::Deserializer for MapDeserializer {
     type Error = Error;
+
+    de_forward_to_deserialize!{
+        deserialize_bool,
+        deserialize_f64, deserialize_f32,
+        deserialize_u8, deserialize_u16, deserialize_u32, deserialize_u64, deserialize_usize,
+        deserialize_i8, deserialize_i16, deserialize_i32, deserialize_i64, deserialize_isize,
+        deserialize_char, deserialize_str, deserialize_string,
+        deserialize_ignored_any,
+        deserialize_bytes,
+        deserialize_unit_struct, deserialize_unit,
+        deserialize_seq, deserialize_seq_fixed_size,
+        deserialize_map, deserialize_newtype_struct, deserialize_struct_field,
+        deserialize_tuple,
+        deserialize_enum,
+        deserialize_struct, deserialize_tuple_struct,
+        deserialize_option
+    }
+
+    fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error> where V: de::Visitor {
+        unimplemented!()
+    }
 
     #[inline]
     fn deserialize<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
