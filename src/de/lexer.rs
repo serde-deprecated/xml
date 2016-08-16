@@ -352,7 +352,7 @@ impl<Iter> XmlIterator<Iter>
                     break
                 },
                 c if c == b'<' => {
-                    return Err(BadDOCTYPE);
+                    return Err(BadProlog);
                 },
                 c => {
                     self.buf.push(c);
