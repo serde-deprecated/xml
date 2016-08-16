@@ -280,7 +280,7 @@ impl<Iter> XmlIterator<Iter>
         match try!(self.peek_char()) {
             b'-' => self.decode_comment(),
             b'[' => self.decode_cdata(),
-            _ if self.ch==InternalLexical::StartOfFile => self.decode_prolog(),
+            _ if self.ch == InternalLexical::StartOfFile => self.decode_prolog(),
             _ => Err(BadCommentOrCDATA),
         }
     }
