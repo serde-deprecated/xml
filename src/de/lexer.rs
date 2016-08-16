@@ -351,7 +351,7 @@ impl<Iter> XmlIterator<Iter>
                 c if c.is_ws_or(b">") => {
                     break
                 },
-                c if c == b'<' => {
+                b'<' => {
                     return Err(BadProlog);
                 },
                 c => {
@@ -410,12 +410,12 @@ impl<Iter> XmlIterator<Iter>
 
         loop {
             match try!(self.next_char()) {
-                b'<' => {
-                    return Err(BadDOCTYPE);
-                }
                 b'>' => {
                     break;
                 },
+                b'<' => {
+                    return Err(BadDOCTYPE);
+                }
                 _ => {
                     continue;
                 }
