@@ -672,6 +672,7 @@ impl<'a, Iter> de::MapVisitor for ContentVisitor<'a, Iter>
             (&Element, EmptyElementEnd(_)) => 2,
             (&Element, Text(txt)) if txt.is_ws() => 5,
             (&Element, EndTagName(_)) => return Ok(None),
+            (&Element, EndOfFile) => return Ok(None),
             _ => unimplemented!()
         } {
             0 => {

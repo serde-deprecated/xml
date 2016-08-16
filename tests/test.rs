@@ -13,6 +13,7 @@ use std::fmt::Debug;
 
 use serde_xml::from_str;
 use serde_xml::value::{Element, from_value};
+use serde_xml::Error;
 
 use serde::de;
 use serde::ser;
@@ -840,4 +841,18 @@ fn unknown_field() {
             },
         )
     ]);
+}
+
+#[test]
+fn test_parse_unfinished() {
+    let s = "<Simple>
+                <c>abc</c>
+                <a/>
+                <b>2</b>
+                <d/>";
+
+    assert!(match from_str::<Simple>(s) {
+        Err(Error::SyntaxError(_, _, _)) => true,
+        _ => false,
+    })
 }
