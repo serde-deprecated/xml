@@ -62,6 +62,17 @@ where T: PartialEq + Debug + ser::Serialize + de::Deserialize,
     }
 }
 
+fn test_parse_err<'a, T>(errors: &[&'a str])
+    where T: PartialEq + Debug + ser::Serialize + de::Deserialize,
+{
+    for &s in errors {
+        assert!(match from_str::<T>(s) {
+            Err(Error::SyntaxError(..)) => true,
+            _ => false,
+        });
+    }
+}
+
 #[test]
 fn test_namespaces() {
     init_logger();
@@ -82,6 +93,83 @@ fn test_namespaces() {
             },
         ),
     ]);
+}
+
+#[test]
+fn test_doctype() {
+    init_logger();
+    #[derive(PartialEq, Serialize, Deserialize, Debug)]
+    struct Envelope {
+        subject: String,
+    }
+
+    test_parse_ok(&[
+        (
+            r#"
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE Envelope>
+            <Envelope>
+            <subject>Reference rates</subject>
+            </Envelope>"#,
+            Envelope {
+                subject: "Reference rates".to_string(),
+            },
+        ),
+        (
+            r#"
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE Envelope[]>
+            <Envelope>
+            <subject>Reference rates</subject>
+            </Envelope>"#,
+            Envelope {
+                subject: "Reference rates".to_string(),
+            },
+        ),
+        (
+            r#"
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE Envelope [
+                <!ELEMENT subject (#PCDATA)>
+            ] >
+            <Envelope>
+            <subject>Reference rates</subject>
+            </Envelope>"#,
+            Envelope {
+                subject: "Reference rates".to_string(),
+            },
+        ),
+    ]);
+}
+
+#[test]
+fn test_doctype_fail() {
+    init_logger();
+    #[derive(PartialEq, Serialize, Deserialize, Debug)]
+    struct Envelope {
+        subject: String,
+    }
+
+    test_parse_err::<Envelope>(&[r#"
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE Envelope [
+                <!ELEMENT subject (#PCDATA)>
+            >
+            <Envelope>
+            <subject>Reference rates</subject>
+            </Envelope>"#,
+
+            r#"
+            <?xml version="1.0" encoding="UTF-8"?>
+            <Envelope>
+            <subject>Reference rates</subject>
+
+            <!DOCTYPE Envelope [
+                <!ELEMENT subject (#PCDATA)>
+            ]>
+
+            </Envelope>"#,
+    ])
 }
 
 #[test]
@@ -845,14 +933,11 @@ fn unknown_field() {
 
 #[test]
 fn test_parse_unfinished() {
-    let s = "<Simple>
-                <c>abc</c>
-                <a/>
-                <b>2</b>
-                <d/>";
-
-    assert!(match from_str::<Simple>(s) {
-        Err(Error::SyntaxError(_, _, _)) => true,
-        _ => false,
-    })
+    test_parse_err::<Simple>(&[
+        "<Simple>
+            <c>abc</c>
+            <a/>
+            <b>2</b>
+            <d/>",
+    ]);
 }

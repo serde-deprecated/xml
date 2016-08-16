@@ -41,6 +41,7 @@ enum InternalLexical {
     EmptyElementEnd,
 
     EndTagName,
+
     StartOfFile,
     EndOfFile,
 }
@@ -64,7 +65,6 @@ pub struct XmlIterator<Iter: Iterator<Item=io::Result<u8>>> {
 impl<Iter> XmlIterator<Iter>
     where Iter: Iterator<Item=io::Result<u8>>,
 {
-
     pub fn expected(&self, reason: &'static str) -> Error {
         self.error(ErrorCode::Expected(reason))
     }
@@ -277,15 +277,16 @@ impl<Iter> XmlIterator<Iter>
     }
 
     fn decode_comment_or_cdata(&mut self) -> Result<(), LexerError> {
-        match try!(self.next_char()) {
+        match try!(self.peek_char()) {
             b'-' => self.decode_comment(),
             b'[' => self.decode_cdata(),
+            _ if self.ch==InternalLexical::StartOfFile => self.decode_prolog(),
             _ => Err(BadCommentOrCDATA),
         }
     }
 
     fn decode_cdata(&mut self) -> Result<(), LexerError> {
-        try!(self.expect_bytes(b"CDATA[", BadCDATA));
+        try!(self.expect_bytes(b"[CDATA[", BadCDATA));
         loop {
             loop {
                 match try!(self.next_char()) {
@@ -316,7 +317,7 @@ impl<Iter> XmlIterator<Iter>
 
     fn decode_comment(&mut self) -> Result<(), LexerError> {
         use self::LexerError::*;
-        try!(self.expect_char(b'-', BadComment));
+        try!(self.expect_bytes(b"--", BadComment));
         loop {
             while try!(self.next_char()) != b'-' {}
             if try!(self.next_char()) != b'-' {
@@ -327,6 +328,101 @@ impl<Iter> XmlIterator<Iter>
             }
             return Ok(())
         }
+    }
+
+    fn decode_prolog(&mut self) -> Result<(), LexerError> {
+        use self::LexerError::*;
+
+        debug!("prolog");
+        try!(self.decode_prolog_name());
+        debug!(" -> {:?}", self.stash_view());
+
+        match self.stash_view() {
+            b"DOCTYPE" => self.decode_doctype(),
+            _ => Err(BadProlog)
+        }
+    }
+
+    fn decode_prolog_name(&mut self) -> Result<(), LexerError> {
+        self.buf.clear();
+
+        loop {
+            match try!(self.peek_char()) {
+                c if c.is_ws_or(b">") => {
+                    break
+                },
+                c if c == b'<' => {
+                    return Err(BadDOCTYPE);
+                },
+                c => {
+                    self.buf.push(c);
+                    self.rdr.next();
+                }
+            }
+        }
+
+        self.stash();
+
+        Ok(())
+    }
+
+    fn decode_doctype(&mut self) -> Result<(), LexerError> {
+        loop {
+            match try!(self.next_char()) {
+                b'[' => try!(self.decode_doctype_declaration()),
+                b'>' => {
+                    break;
+                },
+                b'<' => {
+                    return Err(BadDOCTYPE);
+                },
+                _ => {
+                    continue;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn decode_doctype_declaration(&mut self) -> Result<(), LexerError> {
+        loop {
+            match try!(self.next_char()) {
+                b'<' => try!(self.decode_doctype_conditional()),
+                b'>' => {
+                    return Err(BadDOCTYPE);
+                },
+                b']' => {
+                    break;
+                },
+                _ => {
+                    continue;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn decode_doctype_conditional(&mut self) -> Result<(), LexerError> {
+        use self::LexerError::*;
+        try!(self.expect_char(b'!', BadDOCTYPE));
+
+        loop {
+            match try!(self.next_char()) {
+                b'<' => {
+                    return Err(BadDOCTYPE);
+                }
+                b'>' => {
+                    break;
+                },
+                _ => {
+                    continue;
+                }
+            }
+        }
+
+        Ok(())
     }
 
     fn decode_declaration(&mut self) -> Result<(), LexerError> {
@@ -527,6 +623,8 @@ pub enum LexerError {
     MixedElementsAndText,
     ExpectedEOF,
     ExpectedEq,
+    BadProlog,
+    BadDOCTYPE,
     BadComment,
     BadCDATA,
     BadCommentOrCDATA,
