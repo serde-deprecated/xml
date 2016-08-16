@@ -1,6 +1,7 @@
-use std::collections::BTreeMap;
+
 use serde::de;
 use serde::de::Error;
+use std::collections::BTreeMap;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Element {
@@ -52,7 +53,7 @@ impl de::Deserialize for Helper {
             (true, Content::Text(s)) => Helper::Text(s),
             (_, c) => Helper::Member(Element {
                 attributes: el.attributes,
-                members: c
+                members: c,
             }),
         })
     }
@@ -87,7 +88,7 @@ impl de::Visitor for ElementVisitor {
                     let v = try!(visitor.visit_value());
                     content = Content::Text(v);
                 },
-                Content::Text(_)=> unreachable!(),
+                Content::Text(_) => unreachable!(),
                 Content::Members(mut map) => {
                     map.entry(key)
                        .or_insert_with(Vec::new)
@@ -105,7 +106,7 @@ impl de::Visitor for ElementVisitor {
                         Helper::Text(s) => {
                             attributes.entry(key).or_insert_with(Vec::new).push(s);
                             content = Content::Nothing; // move back
-                        }
+                        },
                     }
                 },
             }
@@ -120,7 +121,7 @@ impl de::Visitor for ElementVisitor {
 
 /// Shortcut function to decode a Xml `Element` into a `T`
 pub fn from_value<T>(value: Element) -> Result<T, super::error::Error>
-    where T: de::Deserialize
+    where T: de::Deserialize,
 {
     let mut de = super::de::value::Deserializer::new(value);
     de::Deserialize::deserialize(&mut de)

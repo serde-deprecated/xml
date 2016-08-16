@@ -1,10 +1,11 @@
+
+
+use self::ErrorCode::*;
+
+use serde::de;
 use std::error;
 use std::fmt;
 use std::io;
-
-use serde::de;
-
-use self::ErrorCode::*;
 
 /// The errors that can arise while parsing a JSON stream.
 #[derive(Clone, PartialEq)]
@@ -31,7 +32,8 @@ impl fmt::Debug for ErrorCode {
             LexingError(e) => write!(f, "error during lexing: \"{:?}\"", e),
             Expected(what) => write!(f, "expected {}", what),
             XmlDoesntSupportSeqofSeq => "xml doesn't support sequences of sequences.\
-            Please use a newtype".fmt(f),
+            Please use a newtype"
+                .fmt(f),
             ExpectedEOF => "trailing characters".fmt(f),
         }
     }
@@ -62,7 +64,6 @@ impl error::Error for Error {
             _ => None,
         }
     }
-
 }
 
 impl fmt::Display for Error {
@@ -70,14 +71,14 @@ impl fmt::Display for Error {
         match *self {
             Error::SyntaxError(ref code, line, col) => {
                 write!(fmt, "{:?} at line {} column {}", code, line, col)
-            }
+            },
             Error::IoError(ref error) => fmt::Display::fmt(error, fmt),
             Error::MissingFieldError(ref field) => {
                 write!(fmt, "missing field {}", field)
             },
             Error::UnknownField(ref field) => {
                 write!(fmt, "unknown field {}", field)
-            }
+            },
         }
     }
 }

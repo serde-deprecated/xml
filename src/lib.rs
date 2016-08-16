@@ -14,20 +14,20 @@ trait IsWhitespace<T> {
     fn is_ws_or(&self, T) -> bool;
 }
 
-impl<'a> IsWhitespace<&'a[u8]> for &'a[u8] {
+impl<'a> IsWhitespace<&'a [u8]> for &'a [u8] {
     fn is_ws(&self) -> bool {
-        self.iter().all(|&c| c.is_ws() )
+        self.iter().all(|&c| c.is_ws())
     }
-    fn is_ws_or(&self, or: &'a[u8]) -> bool {
-        self.iter().all(|&c| c.is_ws_or(or) )
+    fn is_ws_or(&self, or: &'a [u8]) -> bool {
+        self.iter().all(|&c| c.is_ws_or(or))
     }
 }
 
-impl<'a> IsWhitespace<&'a[u8]> for u8 {
+impl<'a> IsWhitespace<&'a [u8]> for u8 {
     fn is_ws(&self) -> bool {
         b" \t\n\r".contains(self)
     }
-    fn is_ws_or(&self, or: &'a[u8]) -> bool {
+    fn is_ws_or(&self, or: &'a [u8]) -> bool {
         self.is_ws() || or.contains(self)
     }
 }

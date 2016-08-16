@@ -1,8 +1,9 @@
+
+
+use IsWhitespace;
 use error::*;
 use error::ErrorCode::*;
 use serde::de;
-
-use IsWhitespace;
 
 use std::io;
 
@@ -76,8 +77,8 @@ macro_rules! de_forward_to_deserialize {
 
 mod lexer;
 pub mod value;
-use self::lexer::Lexical::*;
 pub use self::lexer::LexerError;
+use self::lexer::Lexical::*;
 
 macro_rules! expect {
     ($sel:expr, $pat:pat, $err:expr) => {{
@@ -104,19 +105,16 @@ macro_rules! is_val {
     }}
 }
 
-pub struct Deserializer<Iter: Iterator<Item=io::Result<u8>>> {
+pub struct Deserializer<Iter: Iterator<Item = io::Result<u8>>> {
     rdr: lexer::XmlIterator<Iter>,
 }
 
-pub struct InnerDeserializer<'a, Iter: Iterator<Item=io::Result<u8>> + 'a> (
-    &'a mut lexer::XmlIterator<Iter>, &'a mut bool
-);
+pub struct InnerDeserializer<'a, Iter: Iterator<Item = io::Result<u8>> + 'a>(&'a mut lexer::XmlIterator<Iter>,
+                                                                             &'a mut bool);
 
-impl<'a, Iter: Iterator<Item=io::Result<u8>> + 'a> InnerDeserializer<'a, Iter> {
-    fn decode<T>(
-        xi: &mut lexer::XmlIterator<Iter>
-    ) -> (bool, Result<T, Error>)
-    where T : de::Deserialize
+impl<'a, Iter: Iterator<Item = io::Result<u8>> + 'a> InnerDeserializer<'a, Iter> {
+    fn decode<T>(xi: &mut lexer::XmlIterator<Iter>) -> (bool, Result<T, Error>)
+        where T: de::Deserialize,
     {
         let mut is_seq = false;
         let deser = de::Deserialize::deserialize(&mut InnerDeserializer(xi, &mut is_seq));
@@ -148,7 +146,7 @@ impl<'a, Iter: Iterator<Item=io::Result<u8>> + 'a> InnerDeserializer<'a, Iter> {
 }
 
 impl<'a, Iter> de::Deserializer for InnerDeserializer<'a, Iter>
-where Iter: Iterator<Item=io::Result<u8>>,
+    where Iter: Iterator<Item = io::Result<u8>>,
 {
     type Error = Error;
 
@@ -167,7 +165,9 @@ where Iter: Iterator<Item=io::Result<u8>>,
         deserialize_struct
     }
 
-    fn deserialize_ignored_any<V>(&mut self, mut visitor: V) -> Result<V::Value, Self::Error> where V: de::Visitor {
+    fn deserialize_ignored_any<V>(&mut self, mut visitor: V) -> Result<V::Value, Self::Error>
+        where V: de::Visitor,
+    {
         debug!("InnerDeserializer::deserialize_ignored_any");
         try!(self.eat());
         visitor.visit_unit()
@@ -236,7 +236,11 @@ where Iter: Iterator<Item=io::Result<u8>>,
     }
 
     #[inline]
-    fn deserialize_enum<V>(&mut self, _enum: &str, _variants: &'static [&'static str], mut visitor: V) -> Result<V::Value, Error>
+    fn deserialize_enum<V>(&mut self,
+                           _enum: &str,
+                           _variants: &'static [&'static str],
+                           mut visitor: V)
+                           -> Result<V::Value, Error>
         where V: de::EnumVisitor,
     {
         debug!("InnerDeserializer::deserialize_enum");
@@ -244,9 +248,7 @@ where Iter: Iterator<Item=io::Result<u8>>,
     }
 }
 
-pub struct KeyDeserializer<'a> (
-    &'a str,
-);
+pub struct KeyDeserializer<'a>(&'a str);
 
 impl<'a> KeyDeserializer<'a> {
     fn deserialize<T>(text: &str) -> Result<T, Error>
@@ -282,7 +284,9 @@ impl<'a> de::Deserializer for KeyDeserializer<'a> {
         deserialize_struct, deserialize_tuple_struct
     }
 
-    fn deserialize_ignored_any<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error> where V: de::Visitor {
+    fn deserialize_ignored_any<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: de::Visitor,
+    {
         self.deserialize(visitor)
     }
 
@@ -302,7 +306,11 @@ impl<'a> de::Deserializer for KeyDeserializer<'a> {
     }
 
     #[inline]
-    fn deserialize_enum<V>(&mut self, _enum: &str, _variants: &'static [&'static str], _visitor: V) -> Result<V::Value, Error>
+    fn deserialize_enum<V>(&mut self,
+                           _enum: &str,
+                           _variants: &'static [&'static str],
+                           _visitor: V)
+                           -> Result<V::Value, Error>
         where V: de::EnumVisitor,
     {
         unimplemented!()
@@ -317,14 +325,12 @@ impl<'a> de::Deserializer for KeyDeserializer<'a> {
 }
 
 impl<Iter> Deserializer<Iter>
-    where Iter: Iterator<Item=io::Result<u8>>,
+    where Iter: Iterator<Item = io::Result<u8>>,
 {
     /// Creates the Xml parser.
     #[inline]
     pub fn new(rdr: Iter) -> Deserializer<Iter> {
-        Deserializer {
-            rdr: lexer::XmlIterator::new(rdr),
-        }
+        Deserializer { rdr: lexer::XmlIterator::new(rdr) }
     }
 
     fn ch(&self) -> Result<lexer::Lexical, Error> {
@@ -341,7 +347,7 @@ impl<Iter> Deserializer<Iter>
 
 
 impl<Iter> de::Deserializer for Deserializer<Iter>
-    where Iter: Iterator<Item=io::Result<u8>>,
+    where Iter: Iterator<Item = io::Result<u8>>,
 {
     type Error = Error;
 
@@ -360,7 +366,9 @@ impl<Iter> de::Deserializer for Deserializer<Iter>
         deserialize_struct, deserialize_tuple_struct
     }
 
-    fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error> where V: de::Visitor {
+    fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error>
+        where V: de::Visitor,
+    {
         unimplemented!()
     }
 
@@ -407,7 +415,11 @@ impl<Iter> de::Deserializer for Deserializer<Iter>
     }
 
     #[inline]
-    fn deserialize_enum<V>(&mut self, _enum: &str, _variants: &'static [&'static str], mut visitor: V) -> Result<V::Value, Error>
+    fn deserialize_enum<V>(&mut self,
+                           _enum: &str,
+                           _variants: &'static [&'static str],
+                           mut visitor: V)
+                           -> Result<V::Value, Error>
         where V: de::EnumVisitor,
     {
         expect!(self.rdr, StartTagName(_), "start tag name");
@@ -436,7 +448,8 @@ impl<Iter> de::Deserializer for Deserializer<Iter>
         let v = try!(InnerDeserializer(&mut self.rdr, is_seq).deserialize_map(visitor));
         assert!(!*is_seq);
         match try!(self.ch()) {
-            EndTagName(_) | EmptyElementEnd(_) => {},
+            EndTagName(_) |
+            EmptyElementEnd(_) => {},
             _ => return Err(self.rdr.expected("end tag")),
         }
         expect!(self.rdr, EndOfFile, "end of file");
@@ -444,18 +457,15 @@ impl<Iter> de::Deserializer for Deserializer<Iter>
     }
 }
 
-struct VariantVisitor<'a, Iter: Iterator<Item=io::Result<u8>> + 'a>
-(
-    &'a mut lexer::XmlIterator<Iter>,
-);
+struct VariantVisitor<'a, Iter: Iterator<Item = io::Result<u8>> + 'a>(&'a mut lexer::XmlIterator<Iter>);
 
 impl<'a, Iter: 'a> de::VariantVisitor for VariantVisitor<'a, Iter>
-    where Iter: Iterator<Item=io::Result<u8>>
+    where Iter: Iterator<Item = io::Result<u8>>,
 {
     type Error = Error;
 
     fn visit_variant<V>(&mut self) -> Result<V, Self::Error>
-        where V: de::Deserialize
+        where V: de::Deserialize,
     {
         if b"xsi:type" != is_val!(self.0, AttributeName, "attribute name") {
             return Err(self.0.error(Expected("attribute xsi:type")));
@@ -473,14 +483,14 @@ impl<'a, Iter: 'a> de::VariantVisitor for VariantVisitor<'a, Iter>
 
     /// `visit_tuple` is called when deserializing a tuple-like variant.
     fn visit_tuple<V>(&mut self, _len: usize, _visitor: V) -> Result<V::Value, Self::Error>
-        where V: de::Visitor
+        where V: de::Visitor,
     {
         unimplemented!()
     }
 
     /// `visit_struct` is called when deserializing a struct-like variant.
     fn visit_struct<V>(&mut self, _fields: &'static [&'static str], mut visitor: V) -> Result<V::Value, Self::Error>
-        where V: de::Visitor
+        where V: de::Visitor,
     {
         try!(self.0.bump());
         visitor.visit_map(ContentVisitor::new_attr(&mut self.0))
@@ -488,12 +498,12 @@ impl<'a, Iter: 'a> de::VariantVisitor for VariantVisitor<'a, Iter>
 
     /// `visit_newtype` is called when deseriailizing a variant with a single value.
     fn visit_newtype<D>(&mut self) -> Result<D, Self::Error>
-        where D: de::Deserialize
+        where D: de::Deserialize,
     {
         expect!(self.0, StartTagClose, "start tag close");
-        struct Dummy<'a, Iter: Iterator<Item=io::Result<u8>> + 'a>(&'a mut lexer::XmlIterator<Iter>);
+        struct Dummy<'a, Iter: Iterator<Item = io::Result<u8>> + 'a>(&'a mut lexer::XmlIterator<Iter>);
 
-        impl<'a, Iter: Iterator<Item=io::Result<u8>> + 'a> de::Deserializer for Dummy<'a, Iter> {
+        impl<'a, Iter: Iterator<Item = io::Result<u8>> + 'a> de::Deserializer for Dummy<'a, Iter> {
             type Error = Error;
 
             de_forward_to_deserialize!{
@@ -531,7 +541,9 @@ impl<'a, Iter: 'a> de::VariantVisitor for VariantVisitor<'a, Iter>
                 visitor.visit_map(ContentVisitor::new_attr(&mut self.0))
             }
 
-            fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error> where V: de::Visitor {
+            fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error>
+                where V: de::Visitor,
+            {
                 unimplemented!()
             }
         }
@@ -560,7 +572,9 @@ impl de::Deserializer for UnitDeserializer {
         deserialize_struct, deserialize_tuple_struct
     }
 
-    fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error> where V: de::Visitor {
+    fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error>
+        where V: de::Visitor,
+    {
         unimplemented!()
     }
 
@@ -599,7 +613,9 @@ impl de::SeqVisitor for EmptySeqVisitor {
         Ok(None)
     }
 
-    fn end(&mut self) -> Result<(), Error> { Ok(()) }
+    fn end(&mut self) -> Result<(), Error> {
+        Ok(())
+    }
 }
 
 struct EmptyMapVisitor;
@@ -608,13 +624,19 @@ impl de::MapVisitor for EmptyMapVisitor {
 
     fn visit_key<K>(&mut self) -> Result<Option<K>, Error>
         where K: de::Deserialize,
-    { Ok(None) }
+    {
+        Ok(None)
+    }
 
     fn visit_value<V>(&mut self) -> Result<V, Error>
         where V: de::Deserialize,
-    { unreachable!() }
+    {
+        unreachable!()
+    }
 
-    fn end(&mut self) -> Result<(), Error> { Ok(()) }
+    fn end(&mut self) -> Result<(), Error> {
+        Ok(())
+    }
 
     fn missing_field<V>(&mut self, _field: &'static str) -> Result<V, Error>
         where V: de::Deserialize,
@@ -624,7 +646,7 @@ impl de::MapVisitor for EmptyMapVisitor {
 }
 
 struct ContentVisitor<'a, Iter: 'a>
-    where Iter: Iterator<Item=io::Result<u8>>,
+    where Iter: Iterator<Item = io::Result<u8>>,
 {
     de: &'a mut lexer::XmlIterator<Iter>,
     state: ContentVisitorState,
@@ -638,8 +660,8 @@ enum ContentVisitorState {
     Inner,
 }
 
-impl <'a, Iter> ContentVisitor<'a, Iter>
-    where Iter: Iterator<Item=io::Result<u8>>,
+impl<'a, Iter> ContentVisitor<'a, Iter>
+    where Iter: Iterator<Item = io::Result<u8>>,
 {
     fn new_attr(de: &'a mut lexer::XmlIterator<Iter>) -> Self {
         ContentVisitor {
@@ -650,7 +672,7 @@ impl <'a, Iter> ContentVisitor<'a, Iter>
 }
 
 impl<'a, Iter> de::MapVisitor for ContentVisitor<'a, Iter>
-    where Iter: Iterator<Item=io::Result<u8>>
+    where Iter: Iterator<Item = io::Result<u8>>,
 {
     type Error = Error;
 
@@ -662,8 +684,10 @@ impl<'a, Iter> de::MapVisitor for ContentVisitor<'a, Iter>
         match match (&self.state, try!(self.de.ch())) {
             (&Attribute, EmptyElementEnd(_)) => return Ok(None),
             (&Attribute, StartTagClose) => 0,
-            (&Attribute, AttributeName(n)) => return Ok(Some(try!(KeyDeserializer::deserialize(try!(self.de.check_utf8(n)))))),
-            (&Element, StartTagName(n)) => return Ok(Some(try!(KeyDeserializer::deserialize(try!(self.de.check_utf8(n)))))),
+            (&Attribute, AttributeName(n)) =>
+                return Ok(Some(try!(KeyDeserializer::deserialize(try!(self.de.check_utf8(n)))))),
+            (&Element, StartTagName(n)) =>
+                return Ok(Some(try!(KeyDeserializer::deserialize(try!(self.de.check_utf8(n)))))),
             (&Inner, Text(_)) => 1,
             (&Inner, _) => 4,
             (&Value, EndTagName(_)) => return Ok(None),
@@ -673,7 +697,7 @@ impl<'a, Iter> de::MapVisitor for ContentVisitor<'a, Iter>
             (&Element, Text(txt)) if txt.is_ws() => 5,
             (&Element, EndTagName(_)) => return Ok(None),
             (&Element, EndOfFile) => return Ok(None),
-            _ => unimplemented!()
+            _ => unimplemented!(),
         } {
             0 => {
                 // hack for Attribute, StartTagClose
@@ -705,7 +729,7 @@ impl<'a, Iter> de::MapVisitor for ContentVisitor<'a, Iter>
                 self.state = Element;
                 self.visit_key()
             },
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 
@@ -766,13 +790,13 @@ impl<'a, Iter> de::MapVisitor for ContentVisitor<'a, Iter>
     }
 }
 
-struct SeqVisitor<'a, Iter: 'a + Iterator<Item=io::Result<u8>>> {
+struct SeqVisitor<'a, Iter: 'a + Iterator<Item = io::Result<u8>>> {
     de: &'a mut lexer::XmlIterator<Iter>,
     done: bool,
 }
 
 impl<'a, Iter> SeqVisitor<'a, Iter>
-    where Iter: Iterator<Item=io::Result<u8>>,
+    where Iter: Iterator<Item = io::Result<u8>>,
 {
     fn new(de: &'a mut lexer::XmlIterator<Iter>) -> Self {
         SeqVisitor {
@@ -783,7 +807,7 @@ impl<'a, Iter> SeqVisitor<'a, Iter>
 }
 
 impl<'a, Iter> de::SeqVisitor for SeqVisitor<'a, Iter>
-    where Iter: Iterator<Item=io::Result<u8>>,
+    where Iter: Iterator<Item = io::Result<u8>>,
 {
     type Error = Error;
 
@@ -800,7 +824,8 @@ impl<'a, Iter> de::SeqVisitor for SeqVisitor<'a, Iter>
             return Err(self.de.error(XmlDoesntSupportSeqofSeq));
         }
         match try!(self.de.ch()) {
-            EndTagName(_) | EmptyElementEnd(_) => {},
+            EndTagName(_) |
+            EmptyElementEnd(_) => {},
             _ => return Err(self.de.expected("end tag")),
         }
         self.de.stash();
@@ -811,15 +836,17 @@ impl<'a, Iter> de::SeqVisitor for SeqVisitor<'a, Iter>
             StartTagName(n) if n == self.de.stash_view() => 0,
             StartTagName(_) => 1,
             Text(txt) if txt.is_ws() => 2,
-            _ => unimplemented!()
+            _ => unimplemented!(),
         } {
-            0 => { try!(self.de.bump()); },
+            0 => {
+                try!(self.de.bump());
+            },
             1 => self.done = true,
             2 => match try!(self.de.bump()) {
                 EndTagName(_) => self.done = true,
                 _ => unimplemented!(),
             },
-            _ => unreachable!()
+            _ => unreachable!(),
         }
         Ok(Some(v))
     }
@@ -832,8 +859,8 @@ impl<'a, Iter> de::SeqVisitor for SeqVisitor<'a, Iter>
 
 /// Decodes an xml value from an `Iterator<u8>`.
 pub fn from_iter<I, T>(iter: I) -> Result<T, Error>
-    where I: Iterator<Item=io::Result<u8>>,
-          T: de::Deserialize
+    where I: Iterator<Item = io::Result<u8>>,
+          T: de::Deserialize,
 {
     let mut de = Deserializer::new(iter);
     let value = try!(de::Deserialize::deserialize(&mut de));
@@ -845,7 +872,7 @@ pub fn from_iter<I, T>(iter: I) -> Result<T, Error>
 
 /// Decodes an xml value from a string
 pub fn from_str<T>(s: &str) -> Result<T, Error>
-    where T: de::Deserialize
+    where T: de::Deserialize,
 {
     from_iter(s.bytes().map(Ok))
 }

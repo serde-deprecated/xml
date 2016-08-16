@@ -1,13 +1,14 @@
-use error::*;
-use serde::iter;
-use self::LexerError::*;
+
 
 use IsWhitespace;
-use std::ops::Deref;
+use error::*;
+use self::LexerError::*;
+use serde::iter;
 
-use std::{str, char};
-use std::{io, convert};
+use std::{char, str};
+use std::{convert, io};
 use std::iter::Peekable;
+use std::ops::Deref;
 
 #[derive(Debug, Copy, PartialEq, Clone)]
 pub enum Lexical<'a> {
@@ -54,7 +55,7 @@ enum LexerState {
     Tag,
 }
 
-pub struct XmlIterator<Iter: Iterator<Item=io::Result<u8>>> {
+pub struct XmlIterator<Iter: Iterator<Item = io::Result<u8>>> {
     rdr: iter::LineColIterator<Peekable<Iter>>,
     buf: Vec<u8>,
     stash: Vec<u8>,
@@ -63,7 +64,7 @@ pub struct XmlIterator<Iter: Iterator<Item=io::Result<u8>>> {
 }
 
 impl<Iter> XmlIterator<Iter>
-    where Iter: Iterator<Item=io::Result<u8>>,
+    where Iter: Iterator<Item = io::Result<u8>>,
 {
     pub fn expected(&self, reason: &'static str) -> Error {
         self.error(ErrorCode::Expected(reason))
@@ -77,7 +78,7 @@ impl<Iter> XmlIterator<Iter>
         self.error(ErrorCode::LexingError(reason))
     }
 
-    pub fn check_utf8<'a>(&self, txt: &'a[u8]) -> Result<&'a str, Error> {
+    pub fn check_utf8<'a>(&self, txt: &'a [u8]) -> Result<&'a str, Error> {
         let txt = str::from_utf8(txt);
         txt.or_else(|_| Err(self.error(ErrorCode::NotUtf8)))
     }
@@ -191,16 +192,16 @@ impl<Iter> XmlIterator<Iter>
                     self.buf.push(c);
                     break;
                 },
-            }
+            };
         }
-        fn next<T: Iterator<Item=io::Result<u8>>>(sel: &mut XmlIterator<T>) -> Result<InternalLexical, LexerError> {
+        fn next<T: Iterator<Item = io::Result<u8>>>(sel: &mut XmlIterator<T>) -> Result<InternalLexical, LexerError> {
             sel.buf.clear();
             try!(sel.decode_attr_val());
             sel.buf.clear();
             // recursion!
             sel.decode_attr_name()
         }
-        fn done<T: Iterator<Item=io::Result<u8>>>(sel: &mut XmlIterator<T>) -> Result<InternalLexical, LexerError> {
+        fn done<T: Iterator<Item = io::Result<u8>>>(sel: &mut XmlIterator<T>) -> Result<InternalLexical, LexerError> {
             debug_assert!(!sel.buf.is_empty());
             if sel.buf == b"xmlns" {
                 next(sel)
@@ -219,7 +220,7 @@ impl<Iter> XmlIterator<Iter>
                 // other namespaces are forwarded
                 b':' if self.buf == b"xmlns" => {
                     try!(self.find(b"="));
-                    return next(self)
+                    return next(self);
                 },
 
                 c => self.buf.push(c),
@@ -247,8 +248,8 @@ impl<Iter> XmlIterator<Iter>
                 },
                 b'>' => {
                     self.state = LexerState::Start;
-                    return Ok(EndTagName)
-                }
+                    return Ok(EndTagName);
+                },
                 c => self.buf.push(c),
             }
         }
@@ -267,11 +268,11 @@ impl<Iter> XmlIterator<Iter>
                     self.buf.clear();
                     self.rdr.next();
                     continue;
-                }
+                },
                 c => {
                     self.buf.push(c);
                     self.rdr.next();
-                }
+                },
             }
         }
     }
@@ -311,7 +312,7 @@ impl<Iter> XmlIterator<Iter>
                     continue;
                 },
             }
-            return Ok(())
+            return Ok(());
         }
     }
 
@@ -326,7 +327,7 @@ impl<Iter> XmlIterator<Iter>
             if try!(self.next_char()) != b'>' {
                 continue;
             }
-            return Ok(())
+            return Ok(());
         }
     }
 
@@ -339,7 +340,7 @@ impl<Iter> XmlIterator<Iter>
 
         match self.stash_view() {
             b"DOCTYPE" => self.decode_doctype(),
-            _ => Err(BadProlog)
+            _ => Err(BadProlog),
         }
     }
 
@@ -349,7 +350,7 @@ impl<Iter> XmlIterator<Iter>
         loop {
             match try!(self.peek_char()) {
                 c if c.is_ws_or(b">") => {
-                    break
+                    break;
                 },
                 b'<' => {
                     return Err(BadProlog);
@@ -357,7 +358,7 @@ impl<Iter> XmlIterator<Iter>
                 c => {
                     self.buf.push(c);
                     self.rdr.next();
-                }
+                },
             }
         }
 
@@ -378,7 +379,7 @@ impl<Iter> XmlIterator<Iter>
                 },
                 _ => {
                     continue;
-                }
+                },
             }
         }
 
@@ -397,7 +398,7 @@ impl<Iter> XmlIterator<Iter>
                 },
                 _ => {
                     continue;
-                }
+                },
             }
         }
 
@@ -415,10 +416,10 @@ impl<Iter> XmlIterator<Iter>
                 },
                 b'<' => {
                     return Err(BadDOCTYPE);
-                }
+                },
                 _ => {
                     continue;
-                }
+                },
             }
         }
 
@@ -433,7 +434,7 @@ impl<Iter> XmlIterator<Iter>
             if try!(self.next_char()) != b'>' {
                 continue;
             }
-            return Ok(())
+            return Ok(());
         }
     }
 
@@ -449,12 +450,12 @@ impl<Iter> XmlIterator<Iter>
         loop {
             match try!(self.next_char()) {
                 b';' => {
-                    //let mut buf = [0; 4];
+                    // let mut buf = [0; 4];
                     let ch = char::from_u32(n);
                     let ch = try!(ch.ok_or(EscapedNotUtf8));
-                    //let bytes = ch.encode_utf8(&mut buf);
-                    //let bytes = try!(bytes.ok_or(EscapedNotUtf8));
-                    //self.buf.extend(buf[..bytes].iter().map(|&c| c));
+                    // let bytes = ch.encode_utf8(&mut buf);
+                    // let bytes = try!(bytes.ok_or(EscapedNotUtf8));
+                    // self.buf.extend(buf[..bytes].iter().map(|&c| c));
                     // FIXME: this allocation is required in order to be compatible with stable rust, which
                     // doesn't support encoding a `char` into a stack buffer.
                     self.buf.extend(ch.to_string().bytes());
@@ -466,7 +467,7 @@ impl<Iter> XmlIterator<Iter>
                     n = try!(n.checked_mul(16).ok_or(EscapedNotUtf8));
                     let num = try!(hex_ch_to_num(c));
                     n = try!(n.checked_add(num).ok_or(EscapedNotUtf8));
-                }
+                },
             }
         }
     }
@@ -480,12 +481,12 @@ impl<Iter> XmlIterator<Iter>
         loop {
             match try!(self.next_char()) {
                 b';' => {
-                    //let mut buf = [0; 4];
+                    // let mut buf = [0; 4];
                     let ch = char::from_u32(n);
                     let ch = try!(ch.ok_or(EscapedNotUtf8));
-                    //let bytes = ch.encode_utf8(&mut buf);
-                    //let bytes = try!(bytes.ok_or(EscapedNotUtf8));
-                    //self.buf.extend(buf[..bytes].iter().map(|&c| c));
+                    // let bytes = ch.encode_utf8(&mut buf);
+                    // let bytes = try!(bytes.ok_or(EscapedNotUtf8));
+                    // self.buf.extend(buf[..bytes].iter().map(|&c| c));
                     // FIXME: this allocation is required in order to be compatible with stable rust, which
                     // doesn't support encoding a `char` into a stack buffer.
                     self.buf.extend(ch.to_string().bytes());
@@ -497,7 +498,7 @@ impl<Iter> XmlIterator<Iter>
                     n = try!(n.checked_mul(10).ok_or(EscapedNotUtf8));
                     let num = try!(ch_to_num(c));
                     n = try!(n.checked_add(num).ok_or(EscapedNotUtf8));
-                }
+                },
             }
         }
     }
@@ -542,7 +543,7 @@ impl<Iter> XmlIterator<Iter>
                     } else {
                         Err(LexerError::MixedElementsAndText)
                     }
-                }
+                },
             },
             Some(Ok(b'&')) => {
                 try!(self.decode_escaped());
@@ -559,24 +560,15 @@ impl<Iter> XmlIterator<Iter>
 
     pub fn ch(&self) -> Result<Lexical, Error> {
         Ok(match self.ch {
-            InternalLexical::StartTagClose =>
-                Lexical::StartTagClose,
-            InternalLexical::Text =>
-                Lexical::Text(&self.buf),
-            InternalLexical::StartTagName =>
-                Lexical::StartTagName(&self.buf),
-            InternalLexical::AttributeName =>
-                Lexical::AttributeName(&self.buf),
-            InternalLexical::AttributeValue =>
-                Lexical::AttributeValue(&self.buf),
-            InternalLexical::EmptyElementEnd =>
-                Lexical::EmptyElementEnd(&self.buf),
-            InternalLexical::EndTagName =>
-                Lexical::EndTagName(&self.buf),
-            InternalLexical::StartOfFile =>
-                Lexical::StartOfFile,
-            InternalLexical::EndOfFile =>
-                Lexical::EndOfFile,
+            InternalLexical::StartTagClose => Lexical::StartTagClose,
+            InternalLexical::Text => Lexical::Text(&self.buf),
+            InternalLexical::StartTagName => Lexical::StartTagName(&self.buf),
+            InternalLexical::AttributeName => Lexical::AttributeName(&self.buf),
+            InternalLexical::AttributeValue => Lexical::AttributeValue(&self.buf),
+            InternalLexical::EmptyElementEnd => Lexical::EmptyElementEnd(&self.buf),
+            InternalLexical::EndTagName => Lexical::EndTagName(&self.buf),
+            InternalLexical::StartOfFile => Lexical::StartOfFile,
+            InternalLexical::EndOfFile => Lexical::EndOfFile,
         })
     }
 

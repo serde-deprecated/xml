@@ -1,8 +1,9 @@
-use value::{Element, Content};
+
 use error::{Error, ErrorCode};
 use serde::de;
-use std::{vec, mem};
+use std::{mem, vec};
 use std::collections::btree_map;
+use value::{Content, Element};
 
 pub struct Deserializer {
     value: Option<Element>,
@@ -11,9 +12,7 @@ pub struct Deserializer {
 impl Deserializer {
     /// Creates a new deserializer instance for deserializing the specified JSON value.
     pub fn new(value: Element) -> Deserializer {
-        Deserializer {
-            value: Some(value),
-        }
+        Deserializer { value: Some(value) }
     }
 }
 impl de::Deserializer for Deserializer {
@@ -34,7 +33,9 @@ impl de::Deserializer for Deserializer {
         deserialize_struct, deserialize_tuple_struct
     }
 
-    fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error> where V: de::Visitor {
+    fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error>
+        where V: de::Visitor,
+    {
         unimplemented!()
     }
 
@@ -46,13 +47,15 @@ impl de::Deserializer for Deserializer {
         debug!("value::Deserializer::deserialize {:?}", self.value);
         let el = match self.value.take() {
             Some(value) => value,
-            None => { return Err(de::Error::end_of_stream()); }
+            None => {
+                return Err(de::Error::end_of_stream());
+            },
         };
 
         match (el.attributes.is_empty(), el.members) {
             (true, Content::Text(s)) => visitor.visit_string(s),
             (true, Content::Nothing) => visitor.visit_unit(),
-            (_, m) => visitor.visit_map( MapDeserializer {
+            (_, m) => visitor.visit_map(MapDeserializer {
                 attributes: el.attributes
                               .into_iter()
                               .map(|(k, v)| (k, v.into_iter()))
@@ -79,7 +82,11 @@ impl de::Deserializer for Deserializer {
     }
 
     #[inline]
-    fn deserialize_enum<V>(&mut self, _name: &str, _variants: &'static [&'static str], mut visitor: V) -> Result<V::Value, Error>
+    fn deserialize_enum<V>(&mut self,
+                           _name: &str,
+                           _variants: &'static [&'static str],
+                           mut visitor: V)
+                           -> Result<V::Value, Error>
         where V: de::EnumVisitor,
     {
         debug!("value::Deserializer::deserialize_enum");
@@ -94,7 +101,9 @@ impl de::Deserializer for Deserializer {
         debug!("value::Deserializer::deserialize_map {:?}", self.value);
         let el = match self.value.take() {
             Some(value) => value,
-            None => { return Err(de::Error::end_of_stream()); }
+            None => {
+                return Err(de::Error::end_of_stream());
+            },
         };
         visitor.visit_map(MapDeserializer {
             attributes: el.attributes
@@ -109,12 +118,11 @@ impl de::Deserializer for Deserializer {
 
 struct VariantVisitor(Option<Element>);
 
-impl de::VariantVisitor for VariantVisitor
-{
+impl de::VariantVisitor for VariantVisitor {
     type Error = Error;
 
     fn visit_variant<V>(&mut self) -> Result<V, Self::Error>
-        where V: de::Deserialize
+        where V: de::Deserialize,
     {
         debug!("VariantVisitor::visit_variant");
         if let Some(s) = self.0.as_mut().unwrap().attributes.remove("xsi:type") {
@@ -131,7 +139,7 @@ impl de::VariantVisitor for VariantVisitor
 
     /// `visit_tuple` is called when deserializing a tuple-like variant.
     fn visit_tuple<V>(&mut self, _len: usize, _visitor: V) -> Result<V::Value, Self::Error>
-        where V: de::Visitor
+        where V: de::Visitor,
     {
         unimplemented!()
     }
@@ -147,7 +155,7 @@ impl de::VariantVisitor for VariantVisitor
 
     /// `visit_struct` is called when deserializing a struct-like variant.
     fn visit_struct<V>(&mut self, _fields: &'static [&'static str], mut visitor: V) -> Result<V::Value, Self::Error>
-        where V: de::Visitor
+        where V: de::Visitor,
     {
         // unwrap can never panic, since the Option is always Some
         let element = self.0.take().unwrap();
@@ -162,11 +170,11 @@ impl de::VariantVisitor for VariantVisitor
     }
 }
 
-struct SeqDeserializer<I: Iterator<Item=Element> + ExactSizeIterator>(I);
+struct SeqDeserializer<I: Iterator<Item = Element> + ExactSizeIterator>(I);
 
 impl<I> de::Deserializer for SeqDeserializer<I>
-    where I: Iterator<Item=Element>,
-    I: ExactSizeIterator,
+    where I: Iterator<Item = Element>,
+          I: ExactSizeIterator,
 {
     type Error = Error;
 
@@ -186,7 +194,9 @@ impl<I> de::Deserializer for SeqDeserializer<I>
         deserialize_option
     }
 
-    fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error> where V: de::Visitor {
+    fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error>
+        where V: de::Visitor,
+    {
         unimplemented!()
     }
 
@@ -205,7 +215,11 @@ impl<I> de::Deserializer for SeqDeserializer<I>
     }
 
     #[inline]
-    fn deserialize_enum<V>(&mut self, _name: &str, _variants: &'static [&'static str], mut visitor: V) -> Result<V::Value, Error>
+    fn deserialize_enum<V>(&mut self,
+                           _name: &str,
+                           _variants: &'static [&'static str],
+                           mut visitor: V)
+                           -> Result<V::Value, Error>
         where V: de::EnumVisitor,
     {
         debug!("value::Deserializer::deserialize_enum");
@@ -222,21 +236,20 @@ impl<I> de::Deserializer for SeqDeserializer<I>
 }
 
 impl<I> de::SeqVisitor for SeqDeserializer<I>
-    where I: Iterator<Item=Element>,
-    I: ExactSizeIterator,
+    where I: Iterator<Item = Element>,
+          I: ExactSizeIterator,
 {
     type Error = Error;
 
     fn visit<T>(&mut self) -> Result<Option<T>, Error>
-        where T: de::Deserialize
+        where T: de::Deserialize,
     {
         debug!("SeqDeserializer::deserialize");
         match self.0.next() {
             Some(value) => {
                 debug!("value: {:?}", value);
-                de::Deserialize::deserialize(&mut Deserializer::new(value))
-                    .map(Some)
-            }
+                de::Deserialize::deserialize(&mut Deserializer::new(value)).map(Some)
+            },
             None => Ok(None),
         }
     }
@@ -278,7 +291,9 @@ impl de::Deserializer for StringDeserializer {
         deserialize_option
     }
 
-    fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error> where V: de::Visitor {
+    fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error>
+        where V: de::Visitor,
+    {
         unimplemented!()
     }
 
@@ -306,13 +321,13 @@ impl de::MapVisitor for MapDeserializer {
     type Error = Error;
 
     fn visit_key<T>(&mut self) -> Result<Option<T>, Error>
-        where T: de::Deserialize
+        where T: de::Deserialize,
     {
         Ok(None)
     }
 
     fn visit_value<T>(&mut self) -> Result<T, Error>
-        where T: de::Deserialize
+        where T: de::Deserialize,
     {
         unreachable!()
     }
@@ -326,7 +341,9 @@ impl de::MapVisitor for MapDeserializer {
         where V: de::Deserialize,
     {
         use self::MapDeserializerState::*;
-        debug!("value::MapDeserializer::missing_field {:?} {}", self.state, field);
+        debug!("value::MapDeserializer::missing_field {:?} {}",
+               self.state,
+               field);
 
         // See if the type can deserialize from a unit.
         struct UnitDeserializer;
@@ -350,7 +367,9 @@ impl de::MapVisitor for MapDeserializer {
                 deserialize_struct, deserialize_tuple_struct
             }
 
-            fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error> where V: de::Visitor {
+            fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error>
+                where V: de::Visitor,
+            {
                 unimplemented!()
             }
 
@@ -372,10 +391,8 @@ impl de::MapVisitor for MapDeserializer {
                 debug!("value");
                 self.state = Done;
                 match mem::replace(&mut self.members, Content::Nothing) {
-                    Content::Text(s) =>
-                        de::Deserialize::deserialize(&mut StringDeserializer(Some(s))),
-                    Content::Nothing =>
-                        de::Deserialize::deserialize(&mut UnitDeserializer),
+                    Content::Text(s) => de::Deserialize::deserialize(&mut StringDeserializer(Some(s))),
+                    Content::Nothing => de::Deserialize::deserialize(&mut UnitDeserializer),
                     Content::Members(_) => Err(Error::MissingFieldError("inner text")),
                 }
             },
@@ -417,7 +434,9 @@ impl de::Deserializer for MapDeserializer {
         deserialize_option
     }
 
-    fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error> where V: de::Visitor {
+    fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error>
+        where V: de::Visitor,
+    {
         unimplemented!()
     }
 
