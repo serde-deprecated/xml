@@ -267,6 +267,11 @@ impl<Iter> XmlIterator<Iter>
                 b':' => {
                     self.buf.clear();
                     self.rdr.next();
+                    let c = try!(self.next_char());
+                    if c.is_ws() {
+                        return Err(WhitespaceAfterNamespace);
+                    }
+                    self.buf.push(c);
                     continue;
                 },
                 c => {
@@ -627,4 +632,5 @@ pub enum LexerError {
     NotAHex(u8),
     EscapedNotUtf8,
     Io,
+    WhitespaceAfterNamespace,
 }

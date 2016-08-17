@@ -8,6 +8,7 @@ extern crate log;
 extern crate test;
 extern crate serde;
 extern crate serde_xml;
+extern crate glob;
 
 use std::fmt::Debug;
 
@@ -939,5 +940,12 @@ fn test_parse_unfinished() {
             <a/>
             <b>2</b>
             <d/>",
+    ]);
+}
+
+#[test]
+fn test_things_qc_found() {
+    test_parse_err::<u32>(&[
+        "<\u{0}:/",
     ]);
 }
