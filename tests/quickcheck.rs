@@ -23,6 +23,10 @@ impl quickcheck::Arbitrary for XmlConf {
     fn arbitrary<G: quickcheck::Gen>(g: &mut G) -> Self {
         use std::io::Read;
         let n = glob::glob("xmlconf/**/*.xml").expect("Failed to read glob pattern").filter(|e| e.is_ok()).count();
+        if n == 0 {
+            // in case no files are found
+            return XmlConf(String::new());
+        }
         loop {
             let path = glob::glob("xmlconf/**/*.xml").expect("Failed to read glob pattern").filter(|e| e.is_ok()).nth(g.gen_range(0, n)).unwrap().unwrap();
             let mut f = std::fs::File::open(&path).unwrap();
