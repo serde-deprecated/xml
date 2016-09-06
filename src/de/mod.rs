@@ -197,14 +197,12 @@ impl<'a, Iter> de::Deserializer for InnerDeserializer<'a, Iter>
         }
     }
 
+    #[inline]
     fn deserialize_option<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
     {
         debug!("InnerDeserializer::deserialize_option");
-        match try!(self.0.ch()) {
-            EmptyElementEnd(_) => visitor.visit_none(),
-            _ => visitor.visit_some(self),
-        }
+        visitor.visit_some(self)
     }
 
     #[inline]
@@ -302,6 +300,7 @@ impl<'a> de::Deserializer for KeyDeserializer<'a> {
     fn deserialize_option<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
     {
+        debug!("keydeserializer::deserialize_option: {:#?}", self.0);
         visitor.visit_some(self)
     }
 
@@ -395,12 +394,12 @@ impl<Iter> de::Deserializer for Deserializer<Iter>
     fn deserialize_option<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
     {
-        debug!("Deserializer::deserialize");
+        debug!("Deserializer::deserialize_option");
         expect!(self.rdr, StartTagName(_), "start tag name");
         let is_seq = &mut false;
         let v = match try!(self.rdr.bump()) {
             StartTagClose => visitor.visit_some(&mut InnerDeserializer(&mut self.rdr, is_seq)),
-            EmptyElementEnd(_) => visitor.visit_none(),
+            EmptyElementEnd(_) => visitor.visit_some(&mut UnitDeserializer),
             _ => Err(self.rdr.expected("start tag close")),
         };
         let v = try!(v);
@@ -561,7 +560,7 @@ impl de::Deserializer for UnitDeserializer {
         deserialize_f64, deserialize_f32,
         deserialize_u8, deserialize_u16, deserialize_u32, deserialize_u64, deserialize_usize,
         deserialize_i8, deserialize_i16, deserialize_i32, deserialize_i64, deserialize_isize,
-        deserialize_char, deserialize_str, deserialize_string,
+        deserialize_char,
         deserialize_ignored_any,
         deserialize_bytes,
         deserialize_unit_struct, deserialize_unit,
@@ -581,24 +580,42 @@ impl de::Deserializer for UnitDeserializer {
     fn deserialize<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
     {
+        debug!("UnitDeserializer::deserialize");
         visitor.visit_unit()
+    }
+
+    fn deserialize_str<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
+        where V: de::Visitor,
+    {
+        debug!("UnitDeserializer::deserialize_str");
+        visitor.visit_str("")
+    }
+
+    fn deserialize_string<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
+        where V: de::Visitor,
+    {
+        debug!("UnitDeserializer::deserialize_string");
+        visitor.visit_string(String::new())
     }
 
     fn deserialize_option<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
     {
+        debug!("UnitDeserializer::deserialize_option");
         visitor.visit_none()
     }
 
     fn deserialize_seq<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
     {
+        debug!("UnitDeserializer::deserialize_seq");
         visitor.visit_seq(EmptySeqVisitor)
     }
 
     fn deserialize_map<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
     {
+        debug!("UnitDeserializer::deserialize_map");
         visitor.visit_map(EmptyMapVisitor)
     }
 }

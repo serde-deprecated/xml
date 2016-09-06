@@ -70,14 +70,11 @@ impl de::Deserializer for Deserializer {
     fn deserialize_option<V>(&mut self, mut visitor: V) -> Result<V::Value, Error>
         where V: de::Visitor,
     {
-        debug!("value::Deserializer::deserialize_option");
-        if self.value.is_none() {
-            return Err(de::Error::end_of_stream());
-        };
-        if self.value == Some(Element::new_empty()) {
-            visitor.visit_none()
-        } else {
-            visitor.visit_some(self)
+        debug!("value::Deserializer::deserialize_option: {:?}", self.value);
+        match self.value {
+            None => visitor.visit_none(),
+            Some(ref inner) if *inner == Element::new_empty() => visitor.visit_some(&mut super::UnitDeserializer),
+            Some(_) => visitor.visit_some(self),
         }
     }
 

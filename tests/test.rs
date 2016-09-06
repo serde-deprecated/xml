@@ -275,7 +275,7 @@ fn test_parse_enum() {
             c: "bla".to_string(),
             d: Some("Foo".to_string()),
         })),
-        ("<Animal xsi:type=\"Ant\"><a/><c>bla</c><b>15</b><d/></Animal>", Ant(Simple{
+        ("<Animal xsi:type=\"Ant\"><a/><c>bla</c><b>15</b></Animal>", Ant(Simple{
             a: (),
             b: 15,
             c: "bla".to_string(),
@@ -381,7 +381,6 @@ fn test_parse_struct() {
                 <c>abc</c>
                 <a/>
                 <b>2</b>
-                <d/>
             </Simple>",
             Simple {
                 a: (),
@@ -395,7 +394,6 @@ fn test_parse_struct() {
                 <c>abc</c>
                 <a/>
                 <b>2</b>
-                <d/>
             </Simple>",
             Simple {
                 a: (),
@@ -424,7 +422,7 @@ fn test_parse_struct() {
 fn test_option() {
     init_logger();
     test_parse_ok(&[
-        ("<a/>", None),
+        ("<a/>", Some("".to_string())),
         ("<a></a>", Some("".to_string())),
         ("<a> </a>", Some(" ".to_string())),
         ("<a>42</a>", Some("42".to_string())),
@@ -454,7 +452,6 @@ fn test_amoskvin() {
 </foo>
 <foo>
  <a>Hi</a>
- <b/>
 </foo>
 </root>",
         Root {
@@ -947,5 +944,53 @@ fn test_parse_unfinished() {
 fn test_things_qc_found() {
     test_parse_err::<u32>(&[
         "<\u{0}:/",
+    ]);
+}
+
+#[test]
+fn futile() {
+    #[derive(Eq, PartialEq, Debug, Serialize, Deserialize)]
+    struct Object {
+        id: u8,
+        name: String,
+        x: u8,
+        y: u8,
+        width: u8,
+        height: u8,
+        ellipse: Option<()>,
+    }
+
+    test_parse_ok(&[
+        (
+            r###"
+            <object id="11" name="testEllipse" x="102" y="38" width="21" height="14">
+              <ellipse/>
+            </object>
+            "###,
+            Object {
+                id: 11,
+                name: "testEllipse".to_owned(),
+                x: 102,
+                y: 38,
+                width: 21,
+                height: 14,
+                ellipse: Some(()),
+            },
+        ),
+        (
+            r###"
+            <object id="11" name="testEllipse" x="102" y="38" width="21" height="14">
+            </object>
+            "###,
+            Object {
+                id: 11,
+                name: "testEllipse".to_owned(),
+                x: 102,
+                y: 38,
+                width: 21,
+                height: 14,
+                ellipse: None,
+            },
+        ),
     ]);
 }

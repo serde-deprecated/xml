@@ -67,12 +67,14 @@ impl de::Visitor for ElementVisitor {
     fn visit_str<E>(&mut self, s: &str) -> Result<Element, E>
         where E: Error,
     {
+        debug!("ElementVisitor::visit_str");
         Ok(Element::new_text(s.to_string()))
     }
 
     fn visit_string<E>(&mut self, s: String) -> Result<Element, E>
         where E: Error,
     {
+        debug!("ElementVisitor::visit_string");
         Ok(Element::new_text(s))
     }
 
@@ -80,6 +82,7 @@ impl de::Visitor for ElementVisitor {
     fn visit_map<V>(&mut self, mut visitor: V) -> Result<Element, V::Error>
         where V: de::MapVisitor,
     {
+        debug!("ElementVisitor::visit_map");
         let mut attributes = BTreeMap::new();
         let mut content = Content::Nothing;
         while let Some(key) = try!(visitor.visit_key::<String>()) {
