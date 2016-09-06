@@ -19,6 +19,7 @@ pub enum ErrorCode {
     LexingError(super::de::LexerError),
     Expected(&'static str),
     XmlDoesntSupportSeqofSeq,
+    NonWhitespaceBetweenElements,
 }
 
 impl fmt::Debug for ErrorCode {
@@ -35,6 +36,7 @@ impl fmt::Debug for ErrorCode {
             Please use a newtype"
                 .fmt(f),
             ExpectedEOF => "trailing characters".fmt(f),
+            NonWhitespaceBetweenElements => "found non whitespace characters between elements".fmt(f),
         }
     }
 }

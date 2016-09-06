@@ -697,7 +697,8 @@ impl<'a, Iter> de::MapVisitor for ContentVisitor<'a, Iter>
             (&Element, Text(txt)) if txt.is_ws() => 5,
             (&Element, EndTagName(_)) => return Ok(None),
             (&Element, EndOfFile) => return Ok(None),
-            _ => unimplemented!(),
+            (&Element, Text(_)) => return Err(self.de.error(NonWhitespaceBetweenElements)),
+            _ => panic!("unimplemented: {:?}", (&self.state, try!(self.de.ch()))),
         } {
             0 => {
                 // hack for Attribute, StartTagClose

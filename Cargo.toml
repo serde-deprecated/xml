@@ -15,3 +15,5 @@ log = "0.3"
 
 [dev-dependencies]
 serde_macros = "0.8"
+quickcheck = "0.3.1"
+glob = "0.2"
