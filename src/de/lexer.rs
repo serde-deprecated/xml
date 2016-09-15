@@ -85,13 +85,20 @@ impl<Iter> XmlIterator<Iter>
 
     #[inline]
     pub fn new(rdr: Iter) -> XmlIterator<Iter> {
-        XmlIterator {
+        let mut iter = XmlIterator {
             rdr: iter::LineColIterator::new(rdr.peekable()),
             buf: Vec::with_capacity(128),
             stash: Vec::new(),
             state: LexerState::Start,
             ch: InternalLexical::StartOfFile,
+        };
+        // Byte Order Mark
+        if let Ok(0xEF) = iter.peek_char() {
+            let _ = iter.next_char(); // EF
+            let _ = iter.next_char(); // BB
+            let _ = iter.next_char(); // BF
         }
+        iter
     }
 
     pub fn stash(&mut self) {
