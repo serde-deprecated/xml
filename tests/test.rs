@@ -930,6 +930,16 @@ fn unknown_field() {
 }
 
 #[test]
+fn eoz() {
+    use std::io::Read;
+    let mut file = std::fs::File::open("Report_test.2.xml").unwrap();
+    let mut s = String::new();
+    file.read_to_string(&mut s).unwrap();
+
+    let _xml_value: Element = from_str(&s).unwrap();
+}
+
+#[test]
 fn test_parse_unfinished() {
     test_parse_err::<Simple>(&[
         "<Simple>
