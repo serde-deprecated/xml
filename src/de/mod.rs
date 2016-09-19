@@ -158,7 +158,7 @@ impl<'a, Iter> de::Deserializer for InnerDeserializer<'a, Iter>
         deserialize_char, deserialize_str, deserialize_string,
         deserialize_ignored_any,
         deserialize_bytes,
-        deserialize_unit,
+        deserialize_unit, deserialize_unit_struct,
         deserialize_seq_fixed_size,
         deserialize_newtype_struct, deserialize_struct_field,
         deserialize_tuple,
@@ -219,12 +219,6 @@ impl<'a, Iter> de::Deserializer for InnerDeserializer<'a, Iter>
     {
         debug!("InnerDeserializer::deserialize_map");
         visitor.visit_map(ContentVisitor::new_attr(&mut self.0))
-    }
-
-    fn deserialize_unit_struct<V>(&mut self, _name: &str, _visitor: V) -> Result<V::Value, Error>
-        where V: de::Visitor,
-    {
-        unimplemented!()
     }
 
     fn deserialize_tuple_struct<V>(&mut self, _name: &str, _len: usize, _visitor: V) -> Result<V::Value, Error>

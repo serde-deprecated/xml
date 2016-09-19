@@ -959,6 +959,7 @@ fn test_things_qc_found() {
 
 #[test]
 fn futile() {
+    init_logger();
     #[derive(Eq, PartialEq, Debug, Serialize, Deserialize)]
     struct Object {
         id: u8,
@@ -1000,6 +1001,92 @@ fn futile() {
                 width: 21,
                 height: 14,
                 ellipse: None,
+            },
+        ),
+    ]);
+}
+
+
+#[test]
+fn futile2() {
+    init_logger();
+    #[derive(Eq, PartialEq, Debug, Serialize, Deserialize)]
+    struct Null;
+
+    #[derive(Eq, PartialEq, Debug, Serialize, Deserialize)]
+    struct Object {
+        field: Option<Null>,
+    };
+
+    #[derive(Eq, PartialEq, Debug, Serialize, Deserialize)]
+    struct Stuff {
+        stuff_field: Option<Object>,
+    };
+
+    test_parse_ok(&[
+        (
+            r###"
+            <object>
+              <field/>
+            </object>
+            "###,
+            Object {
+                field: Some(Null),
+            },
+        ),
+        (
+            r###"
+            <object>
+            </object>
+            "###,
+            Object {
+                field: None,
+            },
+        ),
+    ]);
+
+    test_parse_ok(&[
+        (
+            r###"
+            <object>
+              <stuff_field/>
+            </object>
+            "###,
+            Stuff {
+                stuff_field: Some(Object {
+                    field: None,
+                }),
+            },
+        ),
+        (
+            r###"
+            <object>
+              <stuff_field>
+                <field/>
+              </stuff_field>
+            </object>
+            "###,
+            Stuff {
+                stuff_field: Some(Object {
+                    field: Some(Null),
+                }),
+            },
+        ),
+        (
+            r###"
+            <object>
+            </object>
+            "###,
+            Stuff {
+                stuff_field: None,
+            },
+        ),
+        (
+            r###"
+            <object/>
+            "###,
+            Stuff {
+                stuff_field: None,
             },
         ),
     ]);
