@@ -1,6 +1,7 @@
-#![feature(custom_derive, plugin, test)]
-#![feature(custom_attribute)]
-#![plugin(serde_macros)]
+#![feature(proc_macro, test)]
+
+#[macro_use]
+extern crate serde_derive;
 
 #[macro_use]
 extern crate log;
