@@ -5,6 +5,51 @@ use serde::de;
 
 use std::io;
 
+macro_rules! forward_to_helper {
+    (func: unit_struct) => {
+        #[inline]
+        fn deserialize_unit_struct<__V>(&mut self, _: &str, visitor: __V) -> Result<__V::Value, Self::Error>
+            where __V: de::Visitor
+        {
+            self.deserialize_unit(visitor)
+        }
+    };
+    (func: tuple) => {
+        #[inline]
+        fn deserialize_tuple<__V>(&mut self, _: usize, visitor: __V) -> Result<__V::Value, Self::Error>
+            where __V: de::Visitor
+        {
+            self.deserialize_seq(visitor)
+        }
+    };
+    (func: seq_fixed_size) => {
+        #[inline]
+        fn deserialize_seq_fixed_size<__V>(&mut self, _: usize, visitor: __V) -> Result<__V::Value, Self::Error>
+            where __V: de::Visitor
+        {
+            self.deserialize_seq(visitor)
+        }
+    };
+    (func: tuple_struct) => {
+        #[inline]
+        fn deserialize_tuple_struct<__V>(&mut self, _: &str, _: usize, visitor: __V) -> Result<__V::Value, Self::Error>
+            where __V: de::Visitor
+        {
+            self.deserialize_seq(visitor)
+        }
+    };
+    (func: struct) => {
+        #[inline]
+        fn deserialize_struct<__V>(&mut self, _: &str, _: &[&str], visitor: __V) -> Result<__V::Value, Self::Error>
+            where __V: de::Visitor {
+            self.deserialize_map(visitor)
+        }
+    };
+    ($($func:ident)*) => {
+        $(forward_to_helper!{func: $func})*
+    };
+}
+
 mod lexer;
 pub mod value;
 pub use self::lexer::LexerError;
@@ -82,8 +127,11 @@ impl<'a, Iter> de::Deserializer for InnerDeserializer<'a, Iter>
 
     forward_to_deserialize! {
         bool usize u8 u16 u32 u64 isize i8 i16 i32 i64 f32 f64 char str string
-        unit seq_fixed_size bytes unit_struct newtype_struct struct struct_field
-        tuple
+        unit bytes newtype_struct struct_field
+    }
+
+    forward_to_helper! {
+        unit_struct tuple seq_fixed_size struct
     }
 
     fn deserialize_ignored_any<V>(&mut self, mut visitor: V) -> Result<V::Value, Self::Error>
@@ -184,8 +232,11 @@ impl<'a> de::Deserializer for KeyDeserializer<'a> {
 
     forward_to_deserialize! {
         bool usize u8 u16 u32 u64 isize i8 i16 i32 i64 f32 f64 char str string
-        unit seq_fixed_size bytes map unit_struct newtype_struct tuple_struct
-        struct struct_field tuple
+        unit bytes map newtype_struct struct_field
+    }
+
+    forward_to_helper! {
+        unit_struct tuple seq_fixed_size tuple_struct struct
     }
 
     fn deserialize_ignored_any<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
@@ -258,8 +309,11 @@ impl<Iter> de::Deserializer for Deserializer<Iter>
 
     forward_to_deserialize! {
         bool usize u8 u16 u32 u64 isize i8 i16 i32 i64 f32 f64 char str string
-        unit seq_fixed_size bytes unit_struct newtype_struct tuple_struct struct
-        struct_field tuple
+        unit bytes newtype_struct struct_field
+    }
+
+    forward_to_helper! {
+        unit_struct tuple seq_fixed_size tuple_struct struct
     }
 
     fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error>
@@ -404,8 +458,11 @@ impl<'a, Iter: 'a> de::VariantVisitor for VariantVisitor<'a, Iter>
 
             forward_to_deserialize! {
                 bool usize u8 u16 u32 u64 isize i8 i16 i32 i64 f32 f64 char str
-                string unit option seq seq_fixed_size bytes unit_struct
-                newtype_struct tuple_struct struct struct_field tuple enum
+                string unit option seq bytes newtype_struct struct_field enum
+            }
+
+            forward_to_helper! {
+                unit_struct tuple seq_fixed_size tuple_struct struct
             }
 
             fn deserialize<V>(&mut self, _visitor: V) -> Result<V::Value, Error>
@@ -443,8 +500,11 @@ impl de::Deserializer for UnitDeserializer {
 
     forward_to_deserialize! {
         bool usize u8 u16 u32 u64 isize i8 i16 i32 i64 f32 f64 char unit
-        seq_fixed_size bytes unit_struct newtype_struct tuple_struct struct
-        struct_field tuple enum
+        bytes newtype_struct struct_field enum
+    }
+
+    forward_to_helper! {
+        unit_struct tuple seq_fixed_size tuple_struct struct
     }
 
     fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error>

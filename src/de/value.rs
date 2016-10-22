@@ -20,8 +20,11 @@ impl de::Deserializer for Deserializer {
 
     forward_to_deserialize! {
         bool usize u8 u16 u32 u64 isize i8 i16 i32 i64 f32 f64 char str string
-        unit seq seq_fixed_size bytes unit_struct newtype_struct tuple_struct
-        struct struct_field tuple
+        unit seq bytes newtype_struct struct_field
+    }
+
+    forward_to_helper! {
+        unit_struct tuple seq_fixed_size tuple_struct struct
     }
 
     fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error>
@@ -168,8 +171,11 @@ impl<I> de::Deserializer for SeqDeserializer<I>
 
     forward_to_deserialize! {
         bool usize u8 u16 u32 u64 isize i8 i16 i32 i64 f32 f64 char str string
-        unit option seq_fixed_size bytes map unit_struct newtype_struct
-        tuple_struct struct struct_field tuple
+        unit option bytes map newtype_struct struct_field
+    }
+
+    forward_to_helper! {
+        unit_struct tuple seq_fixed_size tuple_struct struct
     }
 
     fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error>
@@ -254,8 +260,11 @@ impl de::Deserializer for StringDeserializer {
 
     forward_to_deserialize! {
         bool usize u8 u16 u32 u64 isize i8 i16 i32 i64 f32 f64 char str string
-        unit option seq seq_fixed_size bytes map unit_struct newtype_struct
-        tuple_struct struct struct_field tuple enum
+        unit option seq bytes map newtype_struct struct_field enum
+    }
+
+    forward_to_helper! {
+        unit_struct tuple seq_fixed_size tuple_struct struct
     }
 
     fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error>
@@ -320,8 +329,11 @@ impl de::MapVisitor for MapDeserializer {
 
             forward_to_deserialize! {
                 bool usize u8 u16 u32 u64 isize i8 i16 i32 i64 f32 f64 char str
-                string unit seq seq_fixed_size bytes map unit_struct
-                newtype_struct tuple_struct struct struct_field tuple enum
+                string unit seq bytes map newtype_struct struct_field enum
+            }
+
+            forward_to_helper! {
+                unit_struct tuple seq_fixed_size tuple_struct struct
             }
 
             fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error>
@@ -376,8 +388,11 @@ impl de::Deserializer for MapDeserializer {
 
     forward_to_deserialize! {
         bool usize u8 u16 u32 u64 isize i8 i16 i32 i64 f32 f64 char str string
-        unit option seq seq_fixed_size bytes map unit_struct newtype_struct
-        tuple_struct struct struct_field tuple enum
+        unit option seq bytes map newtype_struct struct_field enum
+    }
+
+    forward_to_helper! {
+        unit_struct tuple seq_fixed_size tuple_struct struct
     }
 
     fn deserialize_ignored_any<V>(&mut self, _visitor: V) -> Result<V::Value, Self::Error>
