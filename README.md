@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/serde-rs/xml.svg?branch=master)](https://travis-ci.org/serde-rs/xml)
 [![Latest Version](https://img.shields.io/crates/v/serde_xml.svg)](https://crates.io/crates/serde_xml)
-[![Clippy Linting Result](http://clippy.bashy.io/github/serde-rs/xml/master/badge.svg)](http://clippy.bashy.io/github/serde-rs/xml/master/log)
+[![Rust Documentation](https://img.shields.io/badge/api-rustdoc-blue.svg)](https://docs.serde.rs/serde_xml/)
 
 # serde-xml
 
