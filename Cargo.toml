@@ -2,7 +2,7 @@
 name = "serde_xml"
 version = "0.9.1"
 authors = ["Oliver Schneider <serde-xml98198@oli-obk.de>"]
-license-file = "LICENSE"
+license = "MIT"
 description = "xml support for rust-serde"
 repository = "https://github.com/serde-rs/xml"
 
